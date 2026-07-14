@@ -63,11 +63,11 @@ import base64
 import io
 import json
 import logging
+from collections.abc import Iterable
 from dataclasses import asdict, dataclass
 from datetime import datetime
 from enum import Enum
 from pathlib import Path
-from collections.abc import Iterable
 from typing import Any, cast
 
 from PIL import Image
