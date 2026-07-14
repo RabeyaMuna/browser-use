@@ -237,6 +237,7 @@ class Controller(Generic[Context]):
 					return ActionResult(extracted_content=msg, include_in_memory=True, success=False, long_term_memory=msg)
 
 			element_node = await browser_session.get_dom_element_by_index(params.index)
+			assert element_node is not None, f'Element with index {params.index} does not exist'
 			initial_pages = len(browser_session.tabs)
 
 			# if element has file uploader then dont click
@@ -249,7 +250,6 @@ class Controller(Generic[Context]):
 			msg = None
 
 			try:
-				assert element_node is not None, f'Element with index {params.index} does not exist'
 				download_path = await browser_session._click_element_node(element_node)
 				if download_path:
 					emoji = '💾'
@@ -478,7 +478,7 @@ Explain the content of the page and that the requested information is not availa
 			'Get the accessibility tree of the page in the format "role name" with the number_of_elements to return',
 		)
 		async def get_ax_tree(number_of_elements: int, page: Page):
-			node = await page.accessibility.snapshot(interesting_only=True)
+			node = await cast(Any, page).accessibility.snapshot(interesting_only=True)
 
 			def flatten_ax_tree(node, lines):
 				if not node:
