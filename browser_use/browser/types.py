@@ -1,6 +1,7 @@
 # centralize imports for browser typing
 
 import sys
+from typing import TYPE_CHECKING, Any
 
 from patchright._impl._errors import TargetClosedError as PatchrightTargetClosedError
 from patchright.async_api import Browser as PatchrightBrowser
@@ -22,7 +23,26 @@ from playwright.async_api import async_playwright as _async_playwright
 # Define types to be Union[Patchright, Playwright]
 Browser = PatchrightBrowser | PlaywrightBrowser
 BrowserContext = PatchrightBrowserContext | PlaywrightBrowserContext
-Page = PatchrightPage | PlaywrightPage
+
+# Page type - use Union but add accessibility attribute via TYPE_CHECKING
+# The accessibility property exists on both PlaywrightPage and PatchrightPage
+# but is not in the type stubs, so we need to tell the type checker about it
+if TYPE_CHECKING:
+	from typing import Protocol, runtime_checkable
+
+	@runtime_checkable
+	class _PageWithAccessibility(PatchrightPage, PlaywrightPage, Protocol):
+		"""Protocol that combines Page types with accessibility property"""
+
+		@property
+		def accessibility(self) -> Any: ...
+
+	# Use the union - pyright will check each type in the union
+	# The _PageWithAccessibility protocol is added to tell pyright about the accessibility property
+	Page = PatchrightPage | PlaywrightPage | _PageWithAccessibility
+else:
+	Page = PatchrightPage | PlaywrightPage
+
 ElementHandle = PatchrightElementHandle | PlaywrightElementHandle
 FrameLocator = PatchrightFrameLocator | PlaywrightFrameLocator
 Playwright = Playwright
