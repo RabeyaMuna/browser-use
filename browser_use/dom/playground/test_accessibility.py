@@ -74,11 +74,11 @@ async def get_ax_tree(TARGET_URL):
 		print(f'Navigating to {TARGET_URL}')
 		await page.goto(TARGET_URL, wait_until='load')
 
-		ax_tree_interesting = await page.accessibility.snapshot(interesting_only=True)
-		lines = []
-		flatten_ax_tree(ax_tree_interesting, lines)
-		print(lines)
-		print(f'length of ax_tree_interesting: {len(lines)}')
+		# Use the new aria_snapshot API instead of the deprecated accessibility.snapshot
+		ax_tree_interesting = await page.aria_snapshot()
+		# The new API returns a string, print it directly
+		print(ax_tree_interesting)
+		print(f'length of ax_tree_interesting: {len(ax_tree_interesting)}')
 
 		await browser.close()
 
