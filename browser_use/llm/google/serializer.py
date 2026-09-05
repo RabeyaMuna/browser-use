@@ -33,7 +33,7 @@ class GoogleMessageSerializer:
 
 		messages = [m.model_copy(deep=True) for m in messages]
 
-		formatted_messages: ContentListUnion = []
+		formatted_messages: ContentListUnion = []  # type: ignore[assignment]
 		system_message: str | None = None
 
 		for message in messages:
@@ -93,6 +93,6 @@ class GoogleMessageSerializer:
 			# Create the Content object
 			if message_parts:
 				final_message = Content(role=role, parts=message_parts)
-				formatted_messages.append(final_message)
+				formatted_messages.append(final_message)  # type: ignore[reportArgumentType]
 
 		return formatted_messages, system_message
