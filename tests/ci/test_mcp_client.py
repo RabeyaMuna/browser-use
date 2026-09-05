@@ -10,6 +10,7 @@ import mcp.server.stdio
 import mcp.types as types
 import pytest
 from mcp.server import NotificationOptions, Server
+from mcp.server.context import ServerRequestContext
 from mcp.server.models import InitializationOptions
 from pytest_httpserver import HTTPServer
 
@@ -28,14 +29,16 @@ class MockMCPServer:
 	def _setup_handlers(self):
 		"""Setup MCP server handlers."""
 
-		@self.server.list_tools()
-		async def handle_list_tools() -> list[types.Tool]:
+		async def handle_list_tools(
+			context: ServerRequestContext,
+			request: types.ListToolsRequest,
+		) -> types.ListToolsResult:
 			"""List available test tools."""
-			return [
+			return types.ListToolsResult(tools=[
 				types.Tool(
 					name='count_to_n',
 					description='Count from 1 to n and return the numbers',
-					inputSchema={
+					input_schema={
 						'type': 'object',
 						'properties': {'n': {'type': 'integer', 'description': 'Number to count to'}},
 						'required': ['n'],
@@ -44,7 +47,7 @@ class MockMCPServer:
 				types.Tool(
 					name='echo_message',
 					description='Echo back a message with a prefix',
-					inputSchema={
+					input_schema={
 						'type': 'object',
 						'properties': {
 							'message': {'type': 'string', 'description': 'Message to echo'},
@@ -56,13 +59,21 @@ class MockMCPServer:
 				types.Tool(
 					name='get_test_data',
 					description='Get some test data as JSON',
-					inputSchema={'type': 'object', 'properties': {}},
+					input_schema={'type': 'object', 'properties': {}},
 				),
-			]
+			])
 
-		@self.server.call_tool()
-		async def handle_call_tool(name: str, arguments: dict | None) -> list[types.TextContent]:
+		# Register list_tools handler
+		self.server.add_request_handler('tools/list', types.ListToolsRequest, handle_list_tools)
+
+		async def handle_call_tool(
+			context: ServerRequestContext,
+			request: types.CallToolRequest,
+		) -> types.CallToolResult:
 			"""Handle tool execution."""
+			name = request.params.name
+			arguments = request.params.arguments
+			
 			# Record the call
 			self.call_history.append({'tool': name, 'arguments': arguments or {}})
 
@@ -85,7 +96,10 @@ class MockMCPServer:
 			else:
 				result = f'Unknown tool: {name}'
 
-			return [types.TextContent(type='text', text=result)]
+			return types.CallToolResult(content=[types.TextContent(type='text', text=result)])
+
+		# Register call_tool handler
+		self.server.add_request_handler('tools/call', types.CallToolRequest, handle_call_tool)
 
 	async def run(self):
 		"""Run the MCP server."""

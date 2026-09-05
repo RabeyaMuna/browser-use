@@ -65,6 +65,17 @@ class MessageHistory(BaseModel):
 	system_message: BaseMessage | None = None
 	state_message: BaseMessage | None = None
 	consistent_messages: list[BaseMessage] = Field(default_factory=list)
+
+	@property
+	def messages(self) -> list[BaseMessage]:
+		"""Get all messages as a list"""
+		messages = []
+		if self.system_message:
+			messages.append(self.system_message)
+		if self.state_message:
+			messages.append(self.state_message)
+		messages.extend(self.consistent_messages)
+		return messages
 	model_config = ConfigDict(arbitrary_types_allowed=True)
 
 	def get_messages(self) -> list[BaseMessage]:
