@@ -1465,13 +1465,13 @@ class BrowserSession(BaseModel):
 					console.log('BrowserUse Foreground tab change event fired', document.location.href);
 				}
 			});
-			
+
 			// --- Method 2: focus/blur events, most reliable method for headful browsers ---
 			window.addEventListener('focus', async () => {
 				await window._BrowserUseonTabVisibilityChange({ source: 'focus', url: document.location.href });
 				console.log('BrowserUse Foreground tab change event fired', document.location.href);
 			});
-			
+
 			// --- Method 3: pointermove events (may be fired by agent if we implement AI hover movements, also very noisy) ---
 			// Use a throttled handler to avoid excessive calls
 			// let lastMove = 0;
@@ -3861,7 +3861,7 @@ class BrowserSession(BaseModel):
 				// Current viewport dimensions
 				viewport_width: window.innerWidth,
 				viewport_height: window.innerHeight,
-				
+
 				// Total page dimensions
 				page_width: Math.max(
 					document.documentElement.scrollWidth,
@@ -3871,7 +3871,7 @@ class BrowserSession(BaseModel):
 					document.documentElement.scrollHeight,
 					document.body.scrollHeight || 0
 				),
-				
+
 				// Current scroll position
 				scroll_x: window.scrollX || window.pageXOffset || document.documentElement.scrollLeft || 0,
 				scroll_y: window.scrollY || window.pageYOffset || document.documentElement.scrollTop || 0
@@ -4114,12 +4114,12 @@ class BrowserSession(BaseModel):
 					const pdfEmbed = document.querySelector('embed[type="application/x-google-chrome-pdf"]') ||
 									 document.querySelector('embed[type="application/pdf"]');
 					const isPdfViewer = !!pdfEmbed;
-					
+
 					// Also check if the URL ends with .pdf or has PDF content-type
 					const url = window.location.href;
-					const isPdfUrl = url.toLowerCase().includes('.pdf') || 
+					const isPdfUrl = url.toLowerCase().includes('.pdf') ||
 									document.contentType === 'application/pdf';
-					
+
 					return isPdfViewer || isPdfUrl;
 				}
 			""")
@@ -4187,15 +4187,15 @@ class BrowserSession(BaseModel):
 							const blob = await response.blob();
 							const arrayBuffer = await blob.arrayBuffer();
 							const uint8Array = new Uint8Array(arrayBuffer);
-							
+
 							// Log whether this was served from cache
-							const fromCache = response.headers.has('age') || 
+							const fromCache = response.headers.has('age') ||
 											 !response.headers.has('date') ||
-											 performance.getEntriesByName({escaped_pdf_url}).some(entry => 
+											 performance.getEntriesByName({escaped_pdf_url}).some(entry =>
 												 entry.transferSize === 0 || entry.transferSize < entry.encodedBodySize
 											 );
-											 
-							return {{ 
+
+							return {{
 								data: Array.from(uint8Array),
 								fromCache: fromCache,
 								responseSize: uint8Array.length,
