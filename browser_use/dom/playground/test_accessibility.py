@@ -13,6 +13,7 @@ Run with: python browser_use/dom/tests/test_accessibility_playground.py
 """
 
 import asyncio
+import json
 
 from browser_use.browser.types import async_playwright
 
@@ -74,7 +75,11 @@ async def get_ax_tree(TARGET_URL):
 		print(f'Navigating to {TARGET_URL}')
 		await page.goto(TARGET_URL, wait_until='load')
 
-		ax_tree_interesting = await page.accessibility.snapshot(interesting_only=True)
+		# Use the new aria_snapshot API instead of the deprecated accessibility.snapshot
+		ax_tree_interesting = await page.aria_snapshot()
+		# The new API returns a string, parse it to get the tree structure
+		if isinstance(ax_tree_interesting, str):
+			ax_tree_interesting = json.loads(ax_tree_interesting)
 		lines = []
 		flatten_ax_tree(ax_tree_interesting, lines)
 		print(lines)
