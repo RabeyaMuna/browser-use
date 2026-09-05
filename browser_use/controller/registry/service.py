@@ -39,7 +39,7 @@ class Registry(Generic[Context]):
 		self.telemetry = ProductTelemetry()
 		self.exclude_actions = exclude_actions if exclude_actions is not None else []
 
-	def _get_special_param_types(self) -> dict[str, type | None]:
+	def _get_special_param_types(self) -> dict[str, Any]:
 		"""Get the expected types for special parameters from SpecialActionParameters"""
 		# Manually define the expected types to avoid issues with Optional handling.
 		# we should try to reduce this list to 0 if possible, give as few standardized objects to all the actions
@@ -517,7 +517,7 @@ class Registry(Generic[Context]):
 						action.param_model,
 						Field(description=action.description),
 					)
-				},
+				},  # type: ignore[arg-type]
 			)
 			individual_action_models.append(individual_model)
 
@@ -539,18 +539,18 @@ class Registry(Generic[Context]):
 				def get_index(self) -> int | None:
 					"""Delegate get_index to the underlying action model"""
 					if hasattr(self.root, 'get_index'):
-						return self.root.get_index()
+						return self.root.get_index()  # type: ignore[union-attr]
 					return None
 
 				def set_index(self, index: int):
 					"""Delegate set_index to the underlying action model"""
 					if hasattr(self.root, 'set_index'):
-						self.root.set_index(index)
+						self.root.set_index(index)  # type: ignore[union-attr]
 
 				def model_dump(self, **kwargs):
 					"""Delegate model_dump to the underlying action model"""
 					if hasattr(self.root, 'model_dump'):
-						return self.root.model_dump(**kwargs)
+						return self.root.model_dump(**kwargs)  # type: ignore[union-attr]
 					return super().model_dump(**kwargs)
 
 			# Set the name for better debugging
