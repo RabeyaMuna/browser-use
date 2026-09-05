@@ -1,16 +1,16 @@
 import json
 from collections.abc import Mapping
 from dataclasses import dataclass
-from typing import Any, TypeVar, overload
+from typing import Any, TypedDict, TypeVar, overload
 
 import httpx
 from anthropic import (
-	NOT_GIVEN,
 	APIConnectionError,
 	APIStatusError,
 	AsyncAnthropic,
 	NotGiven,
 	RateLimitError,
+	omit,
 )
 from anthropic.types import CacheControlEphemeralParam, Message, ToolParam
 from anthropic.types.model_param import ModelParam
@@ -34,6 +34,10 @@ class ChatAnthropic(BaseChatModel):
 	"""
 	A wrapper around Anthropic's chat model.
 	"""
+
+	class InvokeParams(TypedDict, total=False):
+		temperature: float
+		max_tokens: int
 
 	# Model configuration
 	model: str | ModelParam
@@ -75,10 +79,10 @@ class ChatAnthropic(BaseChatModel):
 
 		return client_params
 
-	def _get_client_params_for_invoke(self):
+	def _get_client_params_for_invoke(self) -> 'ChatAnthropic.InvokeParams':
 		"""Prepare client parameters dictionary for invoke."""
 
-		client_params = {}
+		client_params: 'ChatAnthropic.InvokeParams' = {}
 
 		if self.temperature is not None:
 			client_params['temperature'] = self.temperature
@@ -130,12 +134,17 @@ class ChatAnthropic(BaseChatModel):
 		try:
 			if output_format is None:
 				# Normal completion without structured output
-				response = await self.get_client().messages.create(
-					model=self.model,
-					messages=anthropic_messages,
-					system=system_prompt or NOT_GIVEN,
-					**self._get_client_params_for_invoke(),
-				)
+				invoke_params = self._get_client_params_for_invoke()
+				create_kwargs = {
+					'model': self.model,
+					'messages': anthropic_messages,
+					'system': system_prompt if system_prompt is not None else omit,
+				}
+				if 'temperature' in invoke_params:
+					create_kwargs['temperature'] = invoke_params['temperature']
+				if 'max_tokens' in invoke_params:
+					create_kwargs['max_tokens'] = invoke_params['max_tokens']
+				response = await self.get_client().messages.create(**create_kwargs)
 
 				usage = self._get_usage(response)
 
@@ -172,14 +181,19 @@ class ChatAnthropic(BaseChatModel):
 				# Force the model to use this tool
 				tool_choice = ToolChoiceToolParam(type='tool', name=tool_name)
 
-				response = await self.get_client().messages.create(
-					model=self.model,
-					messages=anthropic_messages,
-					tools=[tool],
-					system=system_prompt or NOT_GIVEN,
-					tool_choice=tool_choice,
-					**self._get_client_params_for_invoke(),
-				)
+				invoke_params = self._get_client_params_for_invoke()
+				create_kwargs = {
+					'model': self.model,
+					'messages': anthropic_messages,
+					'tools': [tool],
+					'system': system_prompt if system_prompt is not None else omit,
+					'tool_choice': tool_choice,
+				}
+				if 'temperature' in invoke_params:
+					create_kwargs['temperature'] = invoke_params['temperature']
+				if 'max_tokens' in invoke_params:
+					create_kwargs['max_tokens'] = invoke_params['max_tokens']
+				response = await self.get_client().messages.create(**create_kwargs)
 
 				usage = self._get_usage(response)
 
