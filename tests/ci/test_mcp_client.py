@@ -21,21 +21,21 @@ class MockMCPServer:
 	"""A minimal MCP server for testing."""
 
 	def __init__(self):
-		self.server = Server('test-mcp-server')
 		self.call_history = []  # Track all tool calls
-		self._setup_handlers()
+		# Create server with handlers passed as constructor parameters
+		self.server = Server(
+			'test-mcp-server',
+			on_list_tools=self._handle_list_tools,
+			on_call_tool=self._handle_call_tool,
+		)
 
-	def _setup_handlers(self):
-		"""Setup MCP server handlers."""
-
-		@self.server.list_tools()
-		async def handle_list_tools() -> list[types.Tool]:
-			"""List available test tools."""
-			return [
+	async def _handle_list_tools(self, ctx, params) -> types.ListToolsResult:
+		"""List available test tools."""
+		return types.ListToolsResult(tools=[
 				types.Tool(
 					name='count_to_n',
 					description='Count from 1 to n and return the numbers',
-					inputSchema={
+					input_schema={
 						'type': 'object',
 						'properties': {'n': {'type': 'integer', 'description': 'Number to count to'}},
 						'required': ['n'],
@@ -44,7 +44,7 @@ class MockMCPServer:
 				types.Tool(
 					name='echo_message',
 					description='Echo back a message with a prefix',
-					inputSchema={
+					input_schema={
 						'type': 'object',
 						'properties': {
 							'message': {'type': 'string', 'description': 'Message to echo'},
@@ -56,36 +56,35 @@ class MockMCPServer:
 				types.Tool(
 					name='get_test_data',
 					description='Get some test data as JSON',
-					inputSchema={'type': 'object', 'properties': {}},
+					input_schema={'type': 'object', 'properties': {}},
 				),
-			]
+			])
 
-		@self.server.call_tool()
-		async def handle_call_tool(name: str, arguments: dict | None) -> list[types.TextContent]:
-			"""Handle tool execution."""
-			# Record the call
-			self.call_history.append({'tool': name, 'arguments': arguments or {}})
+	async def _handle_call_tool(self, ctx, params) -> types.CallToolResult:
+		"""Handle tool execution."""
+		name = params.name
+		arguments = params.arguments or {}
+		# Record the call
+		self.call_history.append({'tool': name, 'arguments': arguments})
 
-			if name == 'count_to_n':
-				assert arguments is not None
-				n = arguments.get('n', 5)
-				numbers = ', '.join(str(i) for i in range(1, n + 1))
-				result = f'Counted to {n}: {numbers}'
+		if name == 'count_to_n':
+			n = arguments.get('n', 5)
+			numbers = ', '.join(str(i) for i in range(1, n + 1))
+			result = f'Counted to {n}: {numbers}'
 
-			elif name == 'echo_message':
-				assert arguments is not None
-				message = arguments.get('message', '')
-				prefix = arguments.get('prefix', 'Echo:')
-				result = f'{prefix} {message}'
+		elif name == 'echo_message':
+			message = arguments.get('message', '')
+			prefix = arguments.get('prefix', 'Echo:')
+			result = f'{prefix} {message}'
 
-			elif name == 'get_test_data':
-				data = {'status': 'success', 'items': ['apple', 'banana', 'cherry'], 'count': 3}
-				result = json.dumps(data, indent=2)
+		elif name == 'get_test_data':
+			data = {'status': 'success', 'items': ['apple', 'banana', 'cherry'], 'count': 3}
+			result = json.dumps(data, indent=2)
 
-			else:
-				result = f'Unknown tool: {name}'
+		else:
+			result = f'Unknown tool: {name}'
 
-			return [types.TextContent(type='text', text=result)]
+		return types.CallToolResult(content=[types.TextContent(type='text', text=result)])
 
 	async def run(self):
 		"""Run the MCP server."""
