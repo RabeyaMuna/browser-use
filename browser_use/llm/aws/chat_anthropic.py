@@ -157,13 +157,17 @@ class ChatAnthropicBedrock(ChatAWSBedrock):
 	) -> ChatInvokeCompletion[T] | ChatInvokeCompletion[str]:
 		anthropic_messages, system_prompt = AnthropicMessageSerializer.serialize_messages(messages)
 
+		# Helper to ensure we only pass a string or NOT_GIVEN for the system parameter
+		def _system_value(sp: Any) -> Any:
+			return sp if isinstance(sp, str) else NOT_GIVEN
+
 		try:
 			if output_format is None:
 				# Normal completion without structured output
 				response = await self.get_client().messages.create(
 					model=self.model,
 					messages=anthropic_messages,
-					system=system_prompt or NOT_GIVEN,
+					system=_system_value(system_prompt),
 					**self._get_client_params_for_invoke(),
 				)
 
@@ -206,7 +210,7 @@ class ChatAnthropicBedrock(ChatAWSBedrock):
 					model=self.model,
 					messages=anthropic_messages,
 					tools=[tool],
-					system=system_prompt or NOT_GIVEN,
+					system=_system_value(system_prompt),
 					tool_choice=tool_choice,
 					**self._get_client_params_for_invoke(),
 				)
