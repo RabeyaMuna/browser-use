@@ -282,13 +282,13 @@ class ChatGoogle(BaseChatModel):
 						messages[-1].content += json_instruction
 
 					# Re-serialize with modified messages
-					contents, _ = GoogleMessageSerializer.serialize_messages(
+					new_contents, _ = GoogleMessageSerializer.serialize_messages(
 						messages, include_system_in_user=self.include_system_in_user
 					)
 
 					response = await self.get_client().aio.models.generate_content(
 						model=self.model,
-						contents=contents,  # type: ignore
+						contents=new_contents,  # type: ignore
 						config=config,
 					)
 
