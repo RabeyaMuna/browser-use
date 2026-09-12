@@ -193,8 +193,8 @@ def are_images_identical(img_path1: str, img_path2: str) -> bool:
 			if img1.size != img2.size:
 				return False
 
-			# Compare pixel data
-			return list(img1.getdata()) == list(img2.getdata())
+			# Compare pixel data using raw bytes to avoid typing issues with ImagingCore
+			return img1.tobytes() == img2.tobytes()
 	except Exception as e:
 		logger.warning(f'Failed to compare images {img_path1} and {img_path2}: {e}')
 		return False
@@ -567,6 +567,12 @@ async def evaluate_task_with_comprehensive_judge(task_folder: Path, model: BaseC
 		final_result = result_data.get('final_result_response', '')
 		last_message = result_data.get('last_message', '')
 		screenshot_paths = result_data.get('screenshot_paths', [])
+
+		# Normalize screenshot_paths to a list to avoid issues with non-iterables (e.g., ImagingCore)
+		if screenshot_paths is None:
+			screenshot_paths = []
+		elif not isinstance(screenshot_paths, (list, tuple)):
+			screenshot_paths = [screenshot_paths]
 
 		# Run comprehensive evaluation
 		judge_result = await judge_with_retry(

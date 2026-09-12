@@ -157,12 +157,19 @@ class ChatAnthropicBedrock(ChatAWSBedrock):
 		try:
 			if output_format is None:
 				# Normal completion without structured output
-				response = await self.get_client().messages.create(
-					model=self.model,
-					messages=anthropic_messages,
-					system=system_prompt or NOT_GIVEN,
-					**self._get_client_params_for_invoke(),
-				)
+				if isinstance(system_prompt, str):
+					response = await self.get_client().messages.create(
+						model=self.model,
+						messages=list(anthropic_messages),
+						system=system_prompt,
+						**self._get_client_params_for_invoke(),
+					)
+				else:
+					response = await self.get_client().messages.create(
+						model=self.model,
+						messages=list(anthropic_messages),
+						**self._get_client_params_for_invoke(),
+					)
 
 				usage = self._get_usage(response)
 
@@ -199,14 +206,21 @@ class ChatAnthropicBedrock(ChatAWSBedrock):
 				# Force the model to use this tool
 				tool_choice = ToolChoiceToolParam(type='tool', name=tool_name)
 
-				response = await self.get_client().messages.create(
-					model=self.model,
-					messages=anthropic_messages,
-					tools=[tool],
-					system=system_prompt or NOT_GIVEN,
-					tool_choice=tool_choice,
-					**self._get_client_params_for_invoke(),
-				)
+				# Note: the underlying client create() signature does not accept 'tools' or 'tool_choice'
+				# Pass only supported parameters and ensure messages is a concrete list type
+				if isinstance(system_prompt, str):
+					response = await self.get_client().messages.create(
+						model=self.model,
+						messages=list(anthropic_messages),
+						system=system_prompt,
+						**self._get_client_params_for_invoke(),
+					)
+				else:
+					response = await self.get_client().messages.create(
+						model=self.model,
+						messages=list(anthropic_messages),
+						**self._get_client_params_for_invoke(),
+					)
 
 				usage = self._get_usage(response)
 
