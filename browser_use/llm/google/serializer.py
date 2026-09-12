@@ -90,9 +90,9 @@ class GoogleMessageSerializer:
 
 						message_parts.append(image_part)
 
-			# Create the Content object
+			# Append message parts (Part instances) to formatted_messages
 			if message_parts:
-				final_message = Content(role=role, parts=message_parts)
-				formatted_messages.append(final_message)
+				# formatted_messages accepts Part instances, so extend with parts
+				formatted_messages.extend(message_parts)
 
 		return formatted_messages, system_message
