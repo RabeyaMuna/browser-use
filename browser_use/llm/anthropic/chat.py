@@ -136,14 +136,19 @@ class ChatAnthropic(BaseChatModel):
 		anthropic_messages, system_prompt = AnthropicMessageSerializer.serialize_messages(messages)
 
 		try:
+			from typing import Any, cast
+
+			# Use a cast to Any so we can call dynamic keyword args without pyright overload errors
+			client = cast(Any, self.get_client().messages)
+
 			if output_format is None:
 				# Normal completion without structured output
-				response = await self.get_client().messages.create(
-					model=self.model,
-					messages=anthropic_messages,
-					system=system_prompt or NOT_GIVEN,
-					**self._get_client_params_for_invoke(),
-				)
+				params = dict(model=self.model, messages=anthropic_messages, **self._get_client_params_for_invoke())
+				# Only include the system param when an explicit system prompt is provided
+				if system_prompt is not None and system_prompt is not NOT_GIVEN:
+					params['system'] = system_prompt
+
+				response = await client.create(**params)
 
 				# Ensure we have a valid Message object before accessing attributes
 				if not isinstance(response, Message):
@@ -188,14 +193,16 @@ class ChatAnthropic(BaseChatModel):
 				# Force the model to use this tool
 				tool_choice = ToolChoiceToolParam(type='tool', name=tool_name)
 
-				response = await self.get_client().messages.create(
-					model=self.model,
-					messages=anthropic_messages,
-					tools=[tool],
-					system=system_prompt or NOT_GIVEN,
-					tool_choice=tool_choice,
-					**self._get_client_params_for_invoke(),
-				)
+				# Build params dynamically to avoid mismatched overloads
+				params = dict(model=self.model, messages=anthropic_messages, **self._get_client_params_for_invoke())
+				# Only include the system param when an explicit system prompt is provided
+				if system_prompt is not None and system_prompt is not NOT_GIVEN:
+					params['system'] = system_prompt
+				# Include tooling parameters for the structured output call
+				params['tools'] = [tool]
+				params['tool_choice'] = tool_choice
+
+				response = await client.create(**params)
 
 				# Ensure we have a valid Message object before accessing attributes
 				if not isinstance(response, Message):

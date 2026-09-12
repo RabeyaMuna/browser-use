@@ -287,7 +287,7 @@ class MCPClient:
 			class ConfiguredBaseModel(BaseModel):
 				model_config = ConfigDict(extra='forbid', validate_by_name=True, validate_by_alias=True)
 
-			param_model = create_model(f'{action_name}_Params', __base__=ConfiguredBaseModel, **param_fields)
+			param_model = create_model(f'{action_name}_Params', __base__=ConfiguredBaseModel, **param_fields)  # type: ignore[call-arg]
 		else:
 			# No parameters - create empty model
 			param_model = None
@@ -509,7 +509,7 @@ class MCPClient:
 
 				try:
 					# Create and return nested pydantic model
-					return create_model(model_name, __base__=ConfiguredBaseModel, **nested_fields)
+					return create_model(model_name, __base__=ConfiguredBaseModel, **nested_fields)  # type: ignore[call-arg]
 				except Exception as e:
 					logger.error(f'Failed to create nested model {model_name}: {e}')
 					logger.debug(f'Fields: {nested_fields}')
