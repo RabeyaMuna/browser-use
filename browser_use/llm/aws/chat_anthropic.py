@@ -157,12 +157,17 @@ class ChatAnthropicBedrock(ChatAWSBedrock):
 		try:
 			if output_format is None:
 				# Normal completion without structured output
-				response = await self.get_client().messages.create(
-					model=self.model,
-					messages=anthropic_messages,
-					system=system_prompt or NOT_GIVEN,
-					**self._get_client_params_for_invoke(),
-				)
+				create_kwargs = {
+					"model": self.model,
+					"messages": anthropic_messages,
+				}
+				# Merge client params
+				create_kwargs.update(self._get_client_params_for_invoke())
+				# Only include system if provided (avoid passing NOT_GIVEN sentinel to satisfy type checker)
+				if system_prompt:
+					create_kwargs["system"] = system_prompt
+
+				response = await self.get_client().messages.create(**create_kwargs)
 
 				usage = self._get_usage(response)
 
@@ -199,14 +204,20 @@ class ChatAnthropicBedrock(ChatAWSBedrock):
 				# Force the model to use this tool
 				tool_choice = ToolChoiceToolParam(type='tool', name=tool_name)
 
-				response = await self.get_client().messages.create(
-					model=self.model,
-					messages=anthropic_messages,
-					tools=[tool],
-					system=system_prompt or NOT_GIVEN,
-					tool_choice=tool_choice,
-					**self._get_client_params_for_invoke(),
-				)
+				create_kwargs = {
+					"model": self.model,
+					"messages": anthropic_messages,
+				}
+				# Merge client params
+				create_kwargs.update(self._get_client_params_for_invoke())
+				# Include tools and tool_choice for tool invocation
+				create_kwargs["tools"] = [tool]
+				create_kwargs["tool_choice"] = tool_choice
+				# Only include system if provided
+				if system_prompt:
+					create_kwargs["system"] = system_prompt
+
+				response = await self.get_client().messages.create(**create_kwargs)
 
 				usage = self._get_usage(response)
 
