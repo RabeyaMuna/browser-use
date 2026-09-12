@@ -157,12 +157,15 @@ class ChatAnthropicBedrock(ChatAWSBedrock):
 		try:
 			if output_format is None:
 				# Normal completion without structured output
-				response = await self.get_client().messages.create(
-					model=self.model,
-					messages=anthropic_messages,
-					system=system_prompt or NOT_GIVEN,
+				create_kwargs: dict = {
+					"model": self.model,
+					"messages": anthropic_messages,
 					**self._get_client_params_for_invoke(),
-				)
+				}
+				if system_prompt is not None:
+					create_kwargs["system"] = system_prompt
+
+				response = await self.get_client().messages.create(**create_kwargs)
 
 				usage = self._get_usage(response)
 
@@ -199,14 +202,17 @@ class ChatAnthropicBedrock(ChatAWSBedrock):
 				# Force the model to use this tool
 				tool_choice = ToolChoiceToolParam(type='tool', name=tool_name)
 
-				response = await self.get_client().messages.create(
-					model=self.model,
-					messages=anthropic_messages,
-					tools=[tool],
-					system=system_prompt or NOT_GIVEN,
-					tool_choice=tool_choice,
+				create_kwargs = {
+					"model": self.model,
+					"messages": anthropic_messages,
+					"tools": [tool],
+					"tool_choice": tool_choice,
 					**self._get_client_params_for_invoke(),
-				)
+				}
+				if system_prompt is not None:
+					create_kwargs["system"] = system_prompt
+
+				response = await self.get_client().messages.create(**create_kwargs)
 
 				usage = self._get_usage(response)
 
@@ -230,10 +236,10 @@ class ChatAnthropicBedrock(ChatAWSBedrock):
 				raise ValueError('Expected tool use in response but none found')
 
 		except APIConnectionError as e:
-			raise ModelProviderError(message=e.message, model=self.name) from e
+			raise ModelProviderError(message=str(e), model=self.name) from e
 		except RateLimitError as e:
-			raise ModelRateLimitError(message=e.message, model=self.name) from e
+			raise ModelRateLimitError(message=str(e), model=self.name) from e
 		except APIStatusError as e:
-			raise ModelProviderError(message=e.message, status_code=e.status_code, model=self.name) from e
+			raise ModelProviderError(message=str(e), status_code=e.status_code, model=self.name) from e
 		except Exception as e:
 			raise ModelProviderError(message=str(e), model=self.name) from e
