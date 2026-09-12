@@ -241,6 +241,11 @@ class Controller(Generic[Context]):
 
 			# if element has file uploader then dont click
 			# Check if element is actually a file input (not just contains file-related keywords)
+			if element_node is None:
+				msg = f'Element with index {params.index} does not exist'
+				logger.warning(msg)
+				return ActionResult(extracted_content=msg, include_in_memory=True, success=False, long_term_memory=msg)
+
 			if browser_session.is_file_input(element_node):
 				msg = f'Index {params.index} - has an element which opens file upload dialog. To upload files please use a specific function to upload files '
 				logger.info(msg)
@@ -478,7 +483,8 @@ Explain the content of the page and that the requested information is not availa
 			'Get the accessibility tree of the page in the format "role name" with the number_of_elements to return',
 		)
 		async def get_ax_tree(number_of_elements: int, page: Page):
-			node = await page.accessibility.snapshot(interesting_only=True)
+			from typing import Any, cast
+			node = await cast(Any, page).accessibility.snapshot(interesting_only=True)
 
 			def flatten_ax_tree(node, lines):
 				if not node:

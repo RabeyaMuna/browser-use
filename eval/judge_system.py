@@ -198,6 +198,8 @@ def prepare_agent_steps(complete_history: list[dict]) -> list[str]:
 def are_images_identical(img_path1: str, img_path2: str) -> bool:
 	"""Check if two images are identical by comparing their content."""
 	try:
+		from typing import Iterable, cast
+
 		with Image.open(img_path1) as img1, Image.open(img_path2) as img2:
 			# Convert to same format for comparison
 			if img1.mode != img2.mode:
@@ -208,8 +210,10 @@ def are_images_identical(img_path1: str, img_path2: str) -> bool:
 			if img1.size != img2.size:
 				return False
 
-			# Compare pixel data
-			return list(img1.getdata()) == list(img2.getdata())
+			# Compare pixel data (cast getdata() result to an Iterable for type checkers)
+			pixels1 = list(cast(Iterable, img1.getdata()))
+			pixels2 = list(cast(Iterable, img2.getdata()))
+			return pixels1 == pixels2
 	except Exception as e:
 		logger.warning(f'Failed to compare images {img_path1} and {img_path2}: {e}')
 		return False
