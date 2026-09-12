@@ -162,12 +162,9 @@ required-environments = [
     "sys_platform == 'linux' and platform_machine == 'x86_64'",
     "sys_platform == 'linux' and platform_machine == 'aarch64'",
     # "sys_platform == 'linux' and platform_machine == 'arm64'",  # no pytorch wheels available yet
-    "sys_platform == 'win32' and platform_machine == 'x86_64'",
+    # "sys_platform == 'win32' and platform_machine == 'x86_64'",
     # "sys_platform == 'win32' and platform_machine == 'arm64'",  # no pytorch wheels available yet
 ]
-dev-dependencies = [
-    "ruff>=0.11.2",
-    "tokencost>=0.1.16",
     "build>=1.2.2",
     "pytest>=8.3.5",
     "pytest-asyncio>=1.0.0",
