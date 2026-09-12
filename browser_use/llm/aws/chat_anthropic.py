@@ -157,12 +157,15 @@ class ChatAnthropicBedrock(ChatAWSBedrock):
 		try:
 			if output_format is None:
 				# Normal completion without structured output
-				response = await self.get_client().messages.create(
-					model=self.model,
-					messages=anthropic_messages,
-					system=system_prompt or NOT_GIVEN,
+				params = {
+					"model": self.model,
+					"messages": anthropic_messages,
 					**self._get_client_params_for_invoke(),
-				)
+				}
+				# Only include system when it was provided (avoid passing NOT_GIVEN sentinel)
+				if system_prompt is not None and system_prompt is not NOT_GIVEN:
+					params["system"] = system_prompt
+				response = await self.get_client().messages.create(**params)
 
 				usage = self._get_usage(response)
 
@@ -199,14 +202,20 @@ class ChatAnthropicBedrock(ChatAWSBedrock):
 				# Force the model to use this tool
 				tool_choice = ToolChoiceToolParam(type='tool', name=tool_name)
 
-				response = await self.get_client().messages.create(
-					model=self.model,
-					messages=anthropic_messages,
-					tools=[tool],
-					system=system_prompt or NOT_GIVEN,
-					tool_choice=tool_choice,
+				params = {
+					"model": self.model,
+					"messages": anthropic_messages,
 					**self._get_client_params_for_invoke(),
-				)
+				}
+				# Attach the tool(s) and tool choice only when present
+				if tool is not None:
+					params["tools"] = [tool]
+				if system_prompt is not None and system_prompt is not NOT_GIVEN:
+					params["system"] = system_prompt
+				if tool_choice is not None:
+					params["tool_choice"] = tool_choice
+
+				response = await self.get_client().messages.create(**params)
 
 				usage = self._get_usage(response)
 
