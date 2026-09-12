@@ -157,7 +157,9 @@ class ChatAnthropicBedrock(ChatAWSBedrock):
 		try:
 			if output_format is None:
 				# Normal completion without structured output
-				response = await self.get_client().messages.create(
+				client = self.get_client()
+				create = getattr(client.messages, "create")
+				response = await create(
 					model=self.model,
 					messages=anthropic_messages,
 					system=system_prompt or NOT_GIVEN,
@@ -199,7 +201,9 @@ class ChatAnthropicBedrock(ChatAWSBedrock):
 				# Force the model to use this tool
 				tool_choice = ToolChoiceToolParam(type='tool', name=tool_name)
 
-				response = await self.get_client().messages.create(
+				client = self.get_client()
+				create = getattr(client.messages, "create")
+				response = await create(
 					model=self.model,
 					messages=anthropic_messages,
 					tools=[tool],

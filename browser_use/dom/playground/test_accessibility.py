@@ -71,6 +71,8 @@ async def get_ax_tree(TARGET_URL):
 	async with async_playwright() as p:
 		browser = await p.chromium.launch(headless=True)
 		page = await browser.new_page()
+		from typing import cast, Any
+		page = cast(Any, page)
 		print(f'Navigating to {TARGET_URL}')
 		await page.goto(TARGET_URL, wait_until='load')
 

@@ -441,31 +441,44 @@ Explain the content of the page and that the requested information is not availa
 				logger.info(msg)
 				raise RuntimeError(str(e))
 
-		# @self.registry.action(
-		# 	'Get the accessibility tree of the page in the format "role name" with the number_of_elements to return',
-		# )
-		# async def get_ax_tree(number_of_elements: int, page: Page):
-		# 	node = await page.accessibility.snapshot(interesting_only=True)
+		@self.registry.action(
+			'Get the accessibility tree of the page in the format "role name" with the number_of_elements to return',
+		)
+		async def get_ax_tree(number_of_elements: int, page: Page):
+			"""Attempt to retrieve an accessibility snapshot from the page if supported.
+			This uses a runtime guard so type checkers won't complain about missing attributes.
+			"""
+			# Guard access to the accessibility API since not all Page implementations expose it
+			if not hasattr(page, 'accessibility') or page.accessibility is None:
+				raise BrowserError('Accessibility API is not available for this page')
 
-		# 	def flatten_ax_tree(node, lines):
-		# 		if not node:
-		# 			return
-		# 		role = node.get('role', '')
-		# 		name = node.get('name', '')
-		# 		lines.append(f'{role} {name}')
-		# 		for child in node.get('children', []):
-		# 			flatten_ax_tree(child, lines)
+			node = await page.accessibility.snapshot(interesting_only=True)
 
-		# 	lines = []
-		# 	flatten_ax_tree(node, lines)
-		# 	msg = '\n'.join(lines)
-		# 	logger.info(msg)
-		# 	return ActionResult(
-		# 		extracted_content=msg,
-		# 		include_in_memory=False,
-		# 		long_term_memory='Retrieved accessibility tree',
-		# 		include_extracted_content_only_once=True,
-		# 	)
+			def flatten_ax_tree(node, lines):
+				if not node:
+					return
+				role = node.get('role', '')
+				name = node.get('name', '')
+				lines.append(f'{role} {name}')
+				for child in node.get('children', []):
+					flatten_ax_tree(child, lines)
+
+			lines = []
+			flatten_ax_tree(node)
+			# If flattened function above didn't accept lines arg (defensive), rebuild properly
+			if not lines:
+				# Try safe flattening with explicit lines container
+				lines = []
+				flatten_ax_tree(node, lines)
+
+			msg = '\n'.join(lines)
+			logger.info(msg)
+			return ActionResult(
+				extracted_content=msg,
+				include_in_memory=False,
+				long_term_memory='Retrieved accessibility tree',
+				include_extracted_content_only_once=True,
+			)
 
 		@self.registry.action(
 			'Scroll the page by specified number of pages (set down=True to scroll down, down=False to scroll up, num_pages=number of pages to scroll like 0.5 for half page, 1.0 for one page, etc.). Optional index parameter to scroll within a specific element or its scroll container (works well for dropdowns and custom UI components).',
