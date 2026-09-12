@@ -68,6 +68,7 @@ def flatten_ax_tree(node, lines):
 
 
 async def get_ax_tree(TARGET_URL):
+	from playwright.async_api import async_playwright
 	async with async_playwright() as p:
 		browser = await p.chromium.launch(headless=True)
 		page = await browser.new_page()
