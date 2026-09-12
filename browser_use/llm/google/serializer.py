@@ -92,7 +92,8 @@ class GoogleMessageSerializer:
 
 			# Create the Content object
 			if message_parts:
-				final_message = Content(role=role, parts=message_parts)
-				formatted_messages.append(final_message)
+				# The Google API expects a flat list of allowed content elements (e.g., Part instances),
+				# not a Content wrapper. Extend formatted_messages with the parts we built.
+				formatted_messages.extend(message_parts)
 
 		return formatted_messages, system_message

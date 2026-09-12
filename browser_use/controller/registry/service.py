@@ -39,7 +39,7 @@ class Registry(Generic[Context]):
 		self.telemetry = ProductTelemetry()
 		self.exclude_actions = exclude_actions if exclude_actions is not None else []
 
-	def _get_special_param_types(self) -> dict[str, type | None]:
+	def _get_special_param_types(self) -> dict[str, object]:
 		"""Get the expected types for special parameters from SpecialActionParameters"""
 		# Manually define the expected types to avoid issues with Optional handling.
 		# we should try to reduce this list to 0 if possible, give as few standardized objects to all the actions
@@ -141,13 +141,13 @@ class Registry(Generic[Context]):
 					default = ... if param.default == Parameter.empty else param.default
 					params_dict[param.name] = (annotation, default)
 
-				param_model = create_model(f'{func.__name__}_Params', __base__=ActionModel, **params_dict)
+				param_model = create_model(f'{func.__name__}_Params', __base__=ActionModel, **params_dict)  # type: ignore
 			else:
 				# No action params, create empty model
 				param_model = create_model(
 					f'{func.__name__}_Params',
 					__base__=ActionModel,
-				)
+				)  # type: ignore
 		assert param_model is not None, f'param_model is None for {func.__name__}'
 
 		# Step 4: Create normalized wrapper function
@@ -271,7 +271,7 @@ class Registry(Generic[Context]):
 			f'{function.__name__}_parameters',
 			__base__=ActionModel,
 			**params,  # type: ignore
-		)
+		)  # type: ignore
 
 	def action(
 		self,
@@ -518,12 +518,12 @@ class Registry(Generic[Context]):
 						Field(description=action.description),
 					)
 				},
-			)
+			)  # type: ignore
 			individual_action_models.append(individual_model)
 
 		# If no actions available, return empty ActionModel
 		if not individual_action_models:
-			return create_model('EmptyActionModel', __base__=ActionModel)
+			return create_model('EmptyActionModel', __base__=ActionModel)  # type: ignore
 
 		# Create proper Union type that maintains ActionModel interface
 		if len(individual_action_models) == 1:
@@ -531,7 +531,7 @@ class Registry(Generic[Context]):
 			result_model = individual_action_models[0]
 		else:
 			# Create a Union type using RootModel that properly delegates ActionModel methods
-			union_type = Union[tuple(individual_action_models)]
+			union_type = Union[tuple(individual_action_models)]  # type: ignore
 
 			class ActionModelUnion(RootModel[union_type]):  # type: ignore
 				"""Union of all available action models that maintains ActionModel interface"""
@@ -562,7 +562,7 @@ class Registry(Generic[Context]):
 		self.telemetry.capture(
 			ControllerRegisteredFunctionsTelemetryEvent(
 				registered_functions=[
-					RegisteredFunction(name=name, params=action.param_model.model_json_schema())
+					RegisteredFunction(name=name, params=action.param_model.model_json_schema())  # type: ignore
 					for name, action in available_actions.items()
 				]
 			)

@@ -562,7 +562,7 @@ class TaskResult:
 		return Stage.RUN_AGENT in self.completed_stages or Stage.FORMAT_HISTORY in self.completed_stages
 
 	@property
-	def server_payload(self) -> dict[str, Any]:
+	def server_payload(self) -> Any:
 		"""Generate payload for server submission"""
 		payload = {
 			'taskId': self.task_id,
@@ -905,24 +905,34 @@ def clean_action_dict(action_dict: dict) -> dict:
 	return {k: clean_action_dict(v) if isinstance(v, dict) else v for k, v in action_dict.items() if v is not None}
 
 
-def make_json_serializable(obj: Any) -> Any:
+from typing import TypeVar
+
+T = TypeVar('T')
+
+def make_json_serializable(obj: T) -> T:
 	"""
 	Convert objects to JSON-serializable types.
 	Handles common non-serializable types like enums, custom objects, etc.
 	"""
 	if obj is None:
+		# type: ignore[return-value]
 		return None
 	elif isinstance(obj, (str, int, float, bool)):
 		return obj
 	elif isinstance(obj, dict):
+		# type: ignore[return-value]
 		return {k: make_json_serializable(v) for k, v in obj.items()}
 	elif isinstance(obj, (list, tuple)):
+		# type: ignore[return-value]
 		return [make_json_serializable(item) for item in obj]
 	elif hasattr(obj, 'value'):  # Handle enums
+		# type: ignore[return-value]
 		return obj.value
 	elif hasattr(obj, '__dict__'):  # Handle custom objects
+		# type: ignore[return-value]
 		return str(obj)
 	else:
+		# type: ignore[return-value]
 		return str(obj)
 
 

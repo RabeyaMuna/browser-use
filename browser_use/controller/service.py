@@ -404,7 +404,8 @@ Only use this for extracting info from a single product/article page, not for en
 			content = await loop.run_in_executor(None, markdownify_func, page_html)
 
 			# manually append iframe text into the content so it's readable by the LLM (includes cross-origin iframes)
-			for iframe in page.frames:
+			from typing import Any, cast
+			for iframe in cast(Any, page).frames:
 				try:
 					await iframe.wait_for_load_state(timeout=5000)  # extra on top of already loaded page
 				except Exception as e:
@@ -477,7 +478,8 @@ Explain the content of the page and that the requested information is not availa
 			'Get the accessibility tree of the page in the format "role name" with the number_of_elements to return',
 		)
 		async def get_ax_tree(number_of_elements: int, page: Page):
-			node = await page.accessibility.snapshot(interesting_only=True)
+			from typing import Any, cast
+			node = await cast(Any, page).accessibility.snapshot(interesting_only=True)
 
 			def flatten_ax_tree(node, lines):
 				if not node:
@@ -524,7 +526,7 @@ Explain the content of the page and that the requested information is not availa
 				await browser_session._scroll_container(cast(int, dy))
 			except Exception as e:
 				# Hard fallback: always works on root scroller
-				await page.evaluate('(y) => window.scrollBy(0, y)', dy)
+				await page.evaluate(f'() => window.scrollBy(0, {dy})')
 				logger.debug('Smart scroll failed; used window.scrollBy fallback', exc_info=e)
 
 			amount_str = f'{params.amount} pixels' if params.amount is not None else 'one page'
@@ -554,7 +556,7 @@ Explain the content of the page and that the requested information is not availa
 			try:
 				await browser_session._scroll_container(dy)
 			except Exception as e:
-				await page.evaluate('(y) => window.scrollBy(0, y)', dy)
+				await page.evaluate(f'() => window.scrollBy(0, {dy})')
 				logger.debug('Smart scroll failed; used window.scrollBy fallback', exc_info=e)
 
 			amount_str = f'{params.amount} pixels' if params.amount is not None else 'one page'
@@ -695,7 +697,8 @@ Explain the content of the page and that the requested information is not availa
 				all_options = []
 				frame_index = 0
 
-				for frame in page.frames:
+				from typing import Any, cast
+				for frame in cast(Any, page).frames:
 					try:
 						options = await frame.evaluate(
 							"""
@@ -785,7 +788,8 @@ Explain the content of the page and that the requested information is not availa
 
 			try:
 				frame_index = 0
-				for frame in page.frames:
+				from typing import Any, cast
+				for frame in cast(Any, page).frames:
 					try:
 						logger.debug(f'Trying frame {frame_index} URL: {frame.url}')
 
@@ -947,17 +951,19 @@ Explain the content of the page and that the requested information is not availa
 				delay_ms: int,
 			) -> tuple[bool, str]:
 				"""Execute the drag operation with comprehensive error handling."""
+				from typing import Any, cast
+				mouse = cast(Any, page).mouse
 				try:
 					# Try to move to source position
 					try:
-						await page.mouse.move(source_x, source_y)
+						await mouse.move(source_x, source_y)
 						logger.debug(f'Moved to source position ({source_x}, {source_y})')
 					except Exception as e:
 						logger.error(f'Failed to move to source position: {str(e)}')
 						return False, f'Failed to move to source position: {str(e)}'
 
 					# Press mouse button down
-					await page.mouse.down()
+					await mouse.down()
 
 					# Move to target position with intermediate steps
 					for i in range(1, steps + 1):
@@ -965,19 +971,19 @@ Explain the content of the page and that the requested information is not availa
 						intermediate_x = int(source_x + (target_x - source_x) * ratio)
 						intermediate_y = int(source_y + (target_y - source_y) * ratio)
 
-						await page.mouse.move(intermediate_x, intermediate_y)
+						await mouse.move(intermediate_x, intermediate_y)
 
 						if delay_ms > 0:
 							await asyncio.sleep(delay_ms / 1000)
 
 					# Move to final target position
-					await page.mouse.move(target_x, target_y)
+					await mouse.move(target_x, target_y)
 
 					# Move again to ensure dragover events are properly triggered
-					await page.mouse.move(target_x, target_y)
+					await mouse.move(target_x, target_y)
 
 					# Release mouse button
-					await page.mouse.up()
+					await mouse.up()
 
 					return True, 'Drag operation completed successfully'
 
@@ -1071,10 +1077,11 @@ Explain the content of the page and that the requested information is not availa
 		@self.registry.action('Google Sheets: Get the contents of the entire sheet', domains=['https://docs.google.com'])
 		async def read_sheet_contents(page: Page):
 			# select all cells
-			await page.keyboard.press('Enter')
-			await page.keyboard.press('Escape')
-			await page.keyboard.press('ControlOrMeta+A')
-			await page.keyboard.press('ControlOrMeta+C')
+			from typing import Any, cast
+			await cast(Any, page).keyboard.press('Enter')
+			await cast(Any, page).keyboard.press('Escape')
+			await cast(Any, page).keyboard.press('ControlOrMeta+A')
+			await cast(Any, page).keyboard.press('ControlOrMeta+C')
 
 			extracted_tsv = await page.evaluate('() => navigator.clipboard.readText()')
 			return ActionResult(
