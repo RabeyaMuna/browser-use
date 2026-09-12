@@ -68,13 +68,14 @@ def flatten_ax_tree(node, lines):
 
 
 async def get_ax_tree(TARGET_URL):
+	from typing import Any, cast
 	async with async_playwright() as p:
 		browser = await p.chromium.launch(headless=True)
 		page = await browser.new_page()
 		print(f'Navigating to {TARGET_URL}')
 		await page.goto(TARGET_URL, wait_until='load')
 
-		ax_tree_interesting = await page.accessibility.snapshot(interesting_only=True)
+		ax_tree_interesting = await cast(Any, page).accessibility.snapshot(interesting_only=True)
 		lines = []
 		flatten_ax_tree(ax_tree_interesting, lines)
 		print(lines)

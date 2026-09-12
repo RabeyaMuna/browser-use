@@ -127,13 +127,20 @@ class ChatAnthropic(BaseChatModel):
 	) -> ChatInvokeCompletion[T] | ChatInvokeCompletion[str]:
 		anthropic_messages, system_prompt = AnthropicMessageSerializer.serialize_messages(messages)
 
+		# If the client does not accept a separate `system` parameter, merge it into messages
+		if system_prompt:
+			# Prepend a system message so it is included in the messages payload
+			# The exact shape expected by the Anthropic client for messages may vary;
+			# using a generic dict with type/text keeps the system prompt included while
+			# avoiding unsupported keyword args on messages.create.
+			anthropic_messages = [{"type": "system", "text": system_prompt}] + anthropic_messages
+
 		try:
 			if output_format is None:
 				# Normal completion without structured output
 				response = await self.get_client().messages.create(
 					model=self.model,
 					messages=anthropic_messages,
-					system=system_prompt or NOT_GIVEN,
 					**self._get_client_params_for_invoke(),
 				)
 
@@ -169,15 +176,19 @@ class ChatAnthropic(BaseChatModel):
 					cache_control=CacheControlEphemeralParam(type='ephemeral'),
 				)
 
-				# Force the model to use this tool
-				tool_choice = ToolChoiceToolParam(type='tool', name=tool_name)
+				# Force the model to use this tool (note: pass tool info via messages if the client does not
+				# support explicit 'tools' or 'tool_choice' kwargs)
+				# Add an instruction message to indicate the tool usage
+				tool_instruction = {
+					"type": "tool_instruction",
+					"tool": tool_name,
+					"description": f"Use the following tool to produce output in the format of {tool_name}",
+				}
+				anthropic_messages_with_tool = anthropic_messages + [tool_instruction]
 
 				response = await self.get_client().messages.create(
 					model=self.model,
-					messages=anthropic_messages,
-					tools=[tool],
-					system=system_prompt or NOT_GIVEN,
-					tool_choice=tool_choice,
+					messages=anthropic_messages_with_tool,
 					**self._get_client_params_for_invoke(),
 				)
 
