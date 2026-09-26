@@ -27,7 +27,7 @@ async def test_anthropic_502_error_handling(monkeypatch):
 				request = httpx.Request('POST', 'https://api.anthropic.com/v1/messages')
 				response = httpx.Response(status_code=502, headers={}, content=b'Bad Gateway', request=request)
 				raise APIStatusError(
-					message='Bad Gateway', response=response, body={'error': {'message': 'Bad Gateway', 'type': 'server_error'}}
+					message='Bad Gateway', response=response, body={'error': {'message': 'Bad Gateway', 'type': 'server_error'}}  # type: ignore[reportArgumentType]
 				)
 
 		messages = Messages()

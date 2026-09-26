@@ -21,165 +21,161 @@ class MockMCPServer:
 	"""A minimal MCP server for testing."""
 
 	def __init__(self):
-		self.server = Server('test-mcp-server')
 		self.call_history = []  # Track all tool calls
-		self._setup_handlers()
+		self.server = Server('test-mcp-server', on_list_tools=self._handle_list_tools, on_call_tool=self._handle_call_tool)  # type: ignore[reportAttributeAccessIssue]
 
-	def _setup_handlers(self):
-		"""Setup MCP server handlers."""
-
-		@self.server.list_tools()
-		async def handle_list_tools() -> list[types.Tool]:
-			"""List available test tools."""
-			return [
-				types.Tool(
-					name='count_to_n',
-					description='Count from 1 to n and return the numbers',
-					inputSchema={
-						'type': 'object',
-						'properties': {'n': {'type': 'integer', 'description': 'Number to count to'}},
-						'required': ['n'],
+	async def _handle_list_tools(self, ctx, params) -> types.ListToolsResult:
+		"""List available test tools."""
+		return types.ListToolsResult(tools=[
+			types.Tool(
+				name='count_to_n',
+				description='Count from 1 to n and return the numbers',
+				input_schema={
+					'type': 'object',
+					'properties': {'n': {'type': 'integer', 'description': 'Number to count to'}},
+					'required': ['n'],
+				},
+			),
+			types.Tool(
+				name='echo_message',
+				description='Echo back a message with a prefix',
+				input_schema={
+					'type': 'object',
+					'properties': {
+						'message': {'type': 'string', 'description': 'Message to echo'},
+						'prefix': {'type': 'string', 'description': 'Prefix to add', 'default': 'Echo:'},
 					},
-				),
-				types.Tool(
-					name='echo_message',
-					description='Echo back a message with a prefix',
-					inputSchema={
-						'type': 'object',
-						'properties': {
-							'message': {'type': 'string', 'description': 'Message to echo'},
-							'prefix': {'type': 'string', 'description': 'Prefix to add', 'default': 'Echo:'},
+					'required': ['message'],
+				},
+			),
+			types.Tool(
+				name='get_test_data',
+				description='Get some test data as JSON',
+				input_schema={'type': 'object', 'properties': {}},
+			),
+			types.Tool(
+				name='process_trace_update',
+				description='Process a cognitive trace update with nested object parameter',
+				input_schema={
+					'type': 'object',
+					'properties': {
+						'trace': {
+							'type': 'object',
+							'properties': {
+								'recent_actions': {
+									'type': 'array',
+									'items': {'type': 'string'},
+									'description': 'List of recent action names',
+								},
+								'current_context': {
+									'type': 'string',
+									'description': 'Current environment context or state',
+								},
+								'goal': {
+									'type': 'string',
+									'description': 'Current goal being pursued',
+								},
+							},
+							'required': ['recent_actions', 'goal'],
+							'additionalProperties': False,
 						},
-						'required': ['message'],
+						'window_size': {
+							'type': 'number',
+							'description': 'Size of the monitoring window',
+							'default': 10,
+						},
 					},
-				),
-				types.Tool(
-					name='get_test_data',
-					description='Get some test data as JSON',
-					inputSchema={'type': 'object', 'properties': {}},
-				),
-				types.Tool(
-					name='process_trace_update',
-					description='Process a cognitive trace update with nested object parameter',
-					inputSchema={
-						'type': 'object',
-						'properties': {
-							'trace': {
+					'required': ['trace'],
+					'additionalProperties': False,
+				},
+			),
+			types.Tool(
+				name='process_array_data',
+				description='Process various array types',
+				input_schema={
+					'type': 'object',
+					'properties': {
+						'string_list': {
+							'type': 'array',
+							'items': {'type': 'string'},
+							'description': 'List of strings',
+						},
+						'number_list': {
+							'type': 'array',
+							'items': {'type': 'number'},
+							'description': 'List of numbers',
+						},
+						'config_list': {
+							'type': 'array',
+							'items': {
 								'type': 'object',
 								'properties': {
-									'recent_actions': {
-										'type': 'array',
-										'items': {'type': 'string'},
-										'description': 'List of recent action names',
-									},
-									'current_context': {
-										'type': 'string',
-										'description': 'Current environment context or state',
-									},
-									'goal': {
-										'type': 'string',
-										'description': 'Current goal being pursued',
-									},
+									'name': {'type': 'string'},
+									'value': {'type': 'integer'},
+									'enabled': {'type': 'boolean', 'default': True},
 								},
-								'required': ['recent_actions', 'goal'],
-								'additionalProperties': False,
+								'required': ['name', 'value'],
 							},
-							'window_size': {
-								'type': 'number',
-								'description': 'Size of the monitoring window',
-								'default': 10,
-							},
+							'description': 'List of configuration objects',
 						},
-						'required': ['trace'],
-						'additionalProperties': False,
-					},
-				),
-				types.Tool(
-					name='process_array_data',
-					description='Process various array types',
-					inputSchema={
-						'type': 'object',
-						'properties': {
-							'string_list': {
-								'type': 'array',
-								'items': {'type': 'string'},
-								'description': 'List of strings',
-							},
-							'number_list': {
-								'type': 'array',
-								'items': {'type': 'number'},
-								'description': 'List of numbers',
-							},
-							'config_list': {
-								'type': 'array',
-								'items': {
-									'type': 'object',
-									'properties': {
-										'name': {'type': 'string'},
-										'value': {'type': 'integer'},
-										'enabled': {'type': 'boolean', 'default': True},
-									},
-									'required': ['name', 'value'],
-								},
-								'description': 'List of configuration objects',
-							},
-							'simple_array': {
-								'type': 'array',
-								'description': 'Array without item type specified',
-							},
+						'simple_array': {
+							'type': 'array',
+							'description': 'Array without item type specified',
 						},
-						'required': ['string_list'],
 					},
-				),
-			]
+					'required': ['string_list'],
+				},
+			),
+		])
 
-		@self.server.call_tool()
-		async def handle_call_tool(name: str, arguments: dict | None) -> list[types.TextContent]:
-			"""Handle tool execution."""
-			# Record the call
-			self.call_history.append({'tool': name, 'arguments': arguments or {}})
+	async def _handle_call_tool(self, ctx, params) -> types.CallToolResult:
+		"""Handle tool execution."""
+		name = params.name
+		arguments = params.arguments or {}
+		# Record the call
+		self.call_history.append({'tool': name, 'arguments': arguments})
 
-			if name == 'count_to_n':
-				assert arguments is not None
-				n = arguments.get('n', 5)
-				numbers = ', '.join(str(i) for i in range(1, n + 1))
-				result = f'Counted to {n}: {numbers}'
+		if name == 'count_to_n':
+			assert arguments is not None
+			n = arguments.get('n', 5)
+			numbers = ', '.join(str(i) for i in range(1, n + 1))
+			result = f'Counted to {n}: {numbers}'
 
-			elif name == 'echo_message':
-				assert arguments is not None
-				message = arguments.get('message', '')
-				prefix = arguments.get('prefix', 'Echo:')
-				result = f'{prefix} {message}'
+		elif name == 'echo_message':
+			assert arguments is not None
+			message = arguments.get('message', '')
+			prefix = arguments.get('prefix', 'Echo:')
+			result = f'{prefix} {message}'
 
-			elif name == 'get_test_data':
-				data = {'status': 'success', 'items': ['apple', 'banana', 'cherry'], 'count': 3}
-				result = json.dumps(data, indent=2)
+		elif name == 'get_test_data':
+			data = {'status': 'success', 'items': ['apple', 'banana', 'cherry'], 'count': 3}
+			result = json.dumps(data, indent=2)
 
-			elif name == 'process_trace_update':
-				assert arguments is not None
-				trace = arguments.get('trace', {})
-				window_size = arguments.get('window_size', 10)
+		elif name == 'process_trace_update':
+			assert arguments is not None
+			trace = arguments.get('trace', {})
+			window_size = arguments.get('window_size', 10)
 
-				recent_actions = trace.get('recent_actions', [])
-				current_context = trace.get('current_context', 'unknown')
-				goal = trace.get('goal', 'no goal')
+			recent_actions = trace.get('recent_actions', [])
+			current_context = trace.get('current_context', 'unknown')
+			goal = trace.get('goal', 'no goal')
 
-				result = f'Processed trace update: {len(recent_actions)} actions, goal: {goal}, context: {current_context}, window: {window_size}'
+			result = f'Processed trace update: {len(recent_actions)} actions, goal: {goal}, context: {current_context}, window: {window_size}'
 
-			elif name == 'process_array_data':
-				assert arguments is not None
-				string_list = arguments.get('string_list', [])
-				number_list = arguments.get('number_list', [])
-				config_list = arguments.get('config_list', [])
-				simple_array = arguments.get('simple_array', [])
+		elif name == 'process_array_data':
+			assert arguments is not None
+			string_list = arguments.get('string_list', [])
+			number_list = arguments.get('number_list', [])
+			config_list = arguments.get('config_list', [])
+			simple_array = arguments.get('simple_array', [])
 
-				config_summary = f'{len(config_list)} configs' if config_list else 'no configs'
-				result = f'Processed arrays: strings={len(string_list)}, numbers={len(number_list)}, {config_summary}, simple={len(simple_array)}'
+			config_summary = f'{len(config_list)} configs' if config_list else 'no configs'
+			result = f'Processed arrays: strings={len(string_list)}, numbers={len(number_list)}, {config_summary}, simple={len(simple_array)}'
 
-			else:
-				result = f'Unknown tool: {name}'
+		else:
+			result = f'Unknown tool: {name}'
 
-			return [types.TextContent(type='text', text=result)]
+		return types.CallToolResult(content=[types.TextContent(type='text', text=result)])
 
 	async def run(self):
 		"""Run the MCP server."""
@@ -276,8 +272,8 @@ async def test_mcp_tools_with_agent(test_mcp_server_script, httpserver: HTTPServ
 		"""
 		<html>
 		<body>
-			<h1>Test Page</h1>
-			<p>Count to 5 and echo a message</p>
+		<h1>Test Page</h1>
+		<p>Count to 5 and echo a message</p>
 		</body>
 		</html>
 		""",
@@ -300,19 +296,19 @@ async def test_mcp_tools_with_agent(test_mcp_server_script, httpserver: HTTPServ
 
 		# Create mock LLM with specific actions
 		actions = [
-			f'{{"thinking": null, "evaluation_previous_goal": "Starting", "memory": "Starting task", "next_goal": "Navigate to test page", "action": [{{"go_to_url": {{"url": "{httpserver.url_for("/")}", "new_tab": false}}}}]}}',
-			'{"thinking": null, "evaluation_previous_goal": "Navigated", "memory": "On test page", "next_goal": "Count to 3", "action": [{"count_to_n": {"n": 3}}]}',
-			'{"thinking": null, "evaluation_previous_goal": "Counted", "memory": "Counted to 3", "next_goal": "Echo message", "action": [{"echo_message": {"message": "MCP works!"}}]}',
-			'{"thinking": null, "evaluation_previous_goal": "Echoed", "memory": "Message echoed", "next_goal": "Complete", "action": [{"done": {"text": "Completed MCP test", "success": true}}]}',
+		f'{{"thinking": null, "evaluation_previous_goal": "Starting", "memory": "Starting task", "next_goal": "Navigate to test page", "action": [{{"go_to_url": {{"url": "{httpserver.url_for("/")}", "new_tab": false}}}}]}}',
+		'{"thinking": null, "evaluation_previous_goal": "Navigated", "memory": "On test page", "next_goal": "Count to 3", "action": [{"count_to_n": {"n": 3}}]}',
+		'{"thinking": null, "evaluation_previous_goal": "Counted", "memory": "Counted to 3", "next_goal": "Echo message", "action": [{"echo_message": {"message": "MCP works!"}}]}',
+		'{"thinking": null, "evaluation_previous_goal": "Echoed", "memory": "Message echoed", "next_goal": "Complete", "action": [{"done": {"text": "Completed MCP test", "success": true}}]}',
 		]
 		mock_llm = create_mock_llm(actions=actions)
 
 		# Create agent
 		agent = Agent(
-			task=f"Go to {httpserver.url_for('/')} then use count_to_n to count to 3, and echo_message to say 'MCP works!'",
-			llm=mock_llm,
-			browser_session=browser_session,
-			controller=controller,
+		task=f"Go to {httpserver.url_for('/')} then use count_to_n to count to 3, and echo_message to say 'MCP works!'",
+		llm=mock_llm,
+		browser_session=browser_session,
+		controller=controller,
 		)
 
 		# Run agent
@@ -321,10 +317,10 @@ async def test_mcp_tools_with_agent(test_mcp_server_script, httpserver: HTTPServ
 		# Verify the agent used MCP tools
 		action_names = []
 		for step in history.history:
-			if step.model_output and step.model_output.action:
-				for action in step.model_output.action:
-					action_dict = action.model_dump(exclude_unset=True)
-					action_names.extend(action_dict.keys())
+		if step.model_output and step.model_output.action:
+			for action in step.model_output.action:
+				action_dict = action.model_dump(exclude_unset=True)
+				action_names.extend(action_dict.keys())
 
 		assert 'count_to_n' in action_names
 		assert 'echo_message' in action_names
@@ -332,10 +328,10 @@ async def test_mcp_tools_with_agent(test_mcp_server_script, httpserver: HTTPServ
 		# Check results
 		results = []
 		for step in history.history:
-			if step.result:
-				for r in step.result:
-					if r.extracted_content:
-						results.append(r.extracted_content)
+		if step.result:
+			for r in step.result:
+				if r.extracted_content:
+					results.append(r.extracted_content)
 
 		# Verify MCP tool outputs
 		assert any('Counted to 3: 1, 2, 3' in r for r in results)
@@ -540,8 +536,8 @@ async def test_agent_with_multiple_mcp_servers(test_mcp_server_script, httpserve
 		"""
 		<html>
 		<body>
-			<h1>Multi-MCP Test</h1>
-			<p>Use tools from both servers</p>
+		<h1>Multi-MCP Test</h1>
+		<p>Use tools from both servers</p>
 		</body>
 		</html>
 		""",
@@ -569,21 +565,21 @@ async def test_agent_with_multiple_mcp_servers(test_mcp_server_script, httpserve
 
 		# Create mock LLM with actions using tools from both servers
 		actions = [
-			f'{{"thinking": null, "evaluation_previous_goal": "Starting", "memory": "Starting multi-MCP task", "next_goal": "Navigate to test page", "action": [{{"go_to_url": {{"url": "{httpserver.url_for("/")}"}}}}]}}',
-			'{"thinking": null, "evaluation_previous_goal": "Navigated", "memory": "On test page", "next_goal": "Use math server to count", "action": [{"math_count_to_n": {"n": 5}}]}',
-			'{"thinking": null, "evaluation_previous_goal": "Counted with math server", "memory": "Used math_count_to_n", "next_goal": "Use data server to echo", "action": [{"data_echo_message": {"message": "Counted successfully", "prefix": "Result:"}}]}',
-			'{"thinking": null, "evaluation_previous_goal": "Echoed with data server", "memory": "Used data_echo_message", "next_goal": "Get test data from data server", "action": [{"data_get_test_data": {}}]}',
-			'{"thinking": null, "evaluation_previous_goal": "Got test data", "memory": "Retrieved JSON data", "next_goal": "Complete", "action": [{"done": {"text": "Used tools from both MCP servers successfully", "success": true}}]}',
+		f'{{"thinking": null, "evaluation_previous_goal": "Starting", "memory": "Starting multi-MCP task", "next_goal": "Navigate to test page", "action": [{{"go_to_url": {{"url": "{httpserver.url_for("/")}"}}}}]}}',
+		'{"thinking": null, "evaluation_previous_goal": "Navigated", "memory": "On test page", "next_goal": "Use math server to count", "action": [{"math_count_to_n": {"n": 5}}]}',
+		'{"thinking": null, "evaluation_previous_goal": "Counted with math server", "memory": "Used math_count_to_n", "next_goal": "Use data server to echo", "action": [{"data_echo_message": {"message": "Counted successfully", "prefix": "Result:"}}]}',
+		'{"thinking": null, "evaluation_previous_goal": "Echoed with data server", "memory": "Used data_echo_message", "next_goal": "Get test data from data server", "action": [{"data_get_test_data": {}}]}',
+		'{"thinking": null, "evaluation_previous_goal": "Got test data", "memory": "Retrieved JSON data", "next_goal": "Complete", "action": [{"done": {"text": "Used tools from both MCP servers successfully", "success": true}}]}',
 		]
 		mock_llm = create_mock_llm(actions=actions)
 
 		# Create agent with extended system message
 		agent = Agent(
-			task=f'Go to {httpserver.url_for("/")}, use math_count_to_n to count to 5, then use data_echo_message and data_get_test_data',
-			llm=mock_llm,
-			browser_session=browser_session,
-			controller=controller,
-			extend_system_message="""You have access to tools from two MCP servers:
+		task=f'Go to {httpserver.url_for("/")}, use math_count_to_n to count to 5, then use data_echo_message and data_get_test_data',
+		llm=mock_llm,
+		browser_session=browser_session,
+		controller=controller,
+		extend_system_message="""You have access to tools from two MCP servers:
 - math server: Provides math_count_to_n for counting
 - data server: Provides data_echo_message for echoing and data_get_test_data for JSON data
 
@@ -596,10 +592,10 @@ Use tools from both servers to complete the task.""",
 		# Verify the agent used tools from both servers
 		action_names = []
 		for step in history.history:
-			if step.model_output and step.model_output.action:
-				for action in step.model_output.action:
-					action_dict = action.model_dump(exclude_unset=True)
-					action_names.extend(action_dict.keys())
+		if step.model_output and step.model_output.action:
+			for action in step.model_output.action:
+				action_dict = action.model_dump(exclude_unset=True)
+				action_names.extend(action_dict.keys())
 
 		# Should have used tools from both servers
 		assert 'math_count_to_n' in action_names
@@ -610,12 +606,12 @@ Use tools from both servers to complete the task.""",
 		results = []
 		memory_entries = []
 		for step in history.history:
-			if step.result:
-				for r in step.result:
-					if r.extracted_content:
-						results.append(r.extracted_content)
-					if r.long_term_memory:
-						memory_entries.append(r.long_term_memory)
+		if step.result:
+			for r in step.result:
+				if r.extracted_content:
+					results.append(r.extracted_content)
+				if r.long_term_memory:
+					memory_entries.append(r.long_term_memory)
 
 		# Verify outputs from both servers
 		assert any('Counted to 5: 1, 2, 3, 4, 5' in r for r in results)
@@ -815,10 +811,10 @@ async def test_mcp_array_type_inference(test_mcp_server_script):
 
 		# Create full parameter instance
 		params = param_model(
-			string_list=['hello', 'world'],
-			number_list=[1.5, 2.7, 3.14],
-			config_list=[config1, config2],
-			simple_array=['mixed', 123, True],
+		string_list=['hello', 'world'],
+		number_list=[1.5, 2.7, 3.14],
+		config_list=[config1, config2],
+		simple_array=['mixed', 123, True],
 		)
 
 		# Verify the parameter structure

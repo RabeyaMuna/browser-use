@@ -198,7 +198,7 @@ class ChatGoogle(BaseChatModel):
 				# Return string response
 				response = await self.get_client().aio.models.generate_content(
 					model=self.model,
-					contents=contents,  # type: ignore
+					contents=contents,  # type: ignore[reportArgumentType]  # type: ignore
 					config=config,
 				)
 
@@ -223,7 +223,7 @@ class ChatGoogle(BaseChatModel):
 
 				response = await self.get_client().aio.models.generate_content(
 					model=self.model,
-					contents=contents,
+					contents=contents,  # type: ignore[reportArgumentType]
 					config=config,
 				)
 

@@ -4,7 +4,7 @@ import asyncio
 import json
 import os
 from pathlib import Path
-from typing import Any, ClassVar
+from typing import Any, ClassVar, cast
 
 from bubus import BaseEvent
 from playwright.async_api import Cookie, Page
@@ -196,7 +196,7 @@ class StorageStateWatchdog(BaseWatchdog):
 				storage_state = await self.browser_session._browser_context.storage_state()
 
 				# Update our last known state
-				self._last_cookie_state = storage_state.get('cookies', []).copy()
+				self._last_cookie_state = cast(list[Cookie], storage_state.get('cookies', []).copy())
 
 				# Convert path to Path object
 				json_path = Path(save_path).expanduser().resolve()
