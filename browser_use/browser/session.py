@@ -3129,7 +3129,7 @@ class BrowserSession(BaseModel):
 			return False
 
 	@staticmethod
-	def is_file_input(node: DOMElementNode) -> bool:
+	def is_file_input(node: DOMElementNode | None) -> bool:
 		return (
 			isinstance(node, DOMElementNode)
 			and getattr(node, 'tag_name', '').lower() == 'input'
