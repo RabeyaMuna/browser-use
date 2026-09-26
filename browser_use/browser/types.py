@@ -1,15 +1,40 @@
 # centralize imports for browser typing
 
 import sys
+from typing import TYPE_CHECKING
 
-from patchright._impl._errors import TargetClosedError as PatchrightTargetClosedError
-from patchright.async_api import Browser as PatchrightBrowser
-from patchright.async_api import BrowserContext as PatchrightBrowserContext
-from patchright.async_api import ElementHandle as PatchrightElementHandle
-from patchright.async_api import FrameLocator as PatchrightFrameLocator
-from patchright.async_api import Page as PatchrightPage
-from patchright.async_api import Playwright as Patchright
-from patchright.async_api import async_playwright as _async_patchright
+# Provide correct types for static analysis even if patchright is not installed
+if TYPE_CHECKING:
+	from patchright._impl._errors import TargetClosedError as PatchrightTargetClosedError
+	from patchright.async_api import Browser as PatchrightBrowser
+	from patchright.async_api import BrowserContext as PatchrightBrowserContext
+	from patchright.async_api import ElementHandle as PatchrightElementHandle
+	from patchright.async_api import FrameLocator as PatchrightFrameLocator
+	from patchright.async_api import Page as PatchrightPage
+	from patchright.async_api import Playwright as Patchright
+	from patchright.async_api import async_playwright as _async_patchright
+
+# patchright is not available on Windows; import conditionally
+try:
+	from patchright._impl._errors import TargetClosedError as PatchrightTargetClosedError
+	from patchright.async_api import Browser as PatchrightBrowser
+	from patchright.async_api import BrowserContext as PatchrightBrowserContext
+	from patchright.async_api import ElementHandle as PatchrightElementHandle
+	from patchright.async_api import FrameLocator as PatchrightFrameLocator
+	from patchright.async_api import Page as PatchrightPage
+	from patchright.async_api import Playwright as Patchright
+	from patchright.async_api import async_playwright as _async_patchright
+except ImportError:
+	# On Windows, patchright is not available.
+	# Fall back to playwright-based types (functionally equivalent).
+	from playwright._impl._errors import TargetClosedError as PatchrightTargetClosedError
+	from playwright.async_api import Browser as PatchrightBrowser
+	from playwright.async_api import BrowserContext as PatchrightBrowserContext
+	from playwright.async_api import ElementHandle as PatchrightElementHandle
+	from playwright.async_api import FrameLocator as PatchrightFrameLocator
+	from playwright.async_api import Page as PatchrightPage
+	from playwright.async_api import Playwright as Patchright
+	from playwright.async_api import async_playwright as _async_patchright
 from playwright._impl._errors import TargetClosedError as PlaywrightTargetClosedError
 from playwright.async_api import Browser as PlaywrightBrowser
 from playwright.async_api import BrowserContext as PlaywrightBrowserContext
