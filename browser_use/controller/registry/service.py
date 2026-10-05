@@ -135,7 +135,7 @@ class Registry(Generic[Context]):
 		if not param_model_provided:
 			# Type 2: Generate param model from action params
 			if action_params:
-				params_dict = {}
+				params_dict: dict[str, tuple[Any, Any]] = {}
 				for param in action_params:
 					annotation = param.annotation if param.annotation != Parameter.empty else str
 					default = ... if param.default == Parameter.empty else param.default
@@ -243,7 +243,8 @@ class Registry(Generic[Context]):
 				return await asyncio.to_thread(func, *call_args)
 
 		# Update wrapper signature to be kwargs-only
-		new_params = [Parameter('params', Parameter.KEYWORD_ONLY, default=None, annotation=Optional[param_model])]
+		params_annotation = Optional[param_model]
+		new_params = [Parameter('params', Parameter.KEYWORD_ONLY, default=None, annotation=params_annotation)]
 
 		# Add special params as keyword-only
 		for sp in special_params:
@@ -505,19 +506,20 @@ class Registry(Generic[Context]):
 				available_actions[name] = action
 
 		# Create individual action models for each action
-		individual_action_models = []
+		individual_action_models: list[type[ActionModel]] = []
 
 		for name, action in available_actions.items():
 			# Create an individual model for each action that contains only one field
+			field_definitions: dict[str, tuple[Any, Any]] = {
+				name: (
+					action.param_model,
+					Field(description=action.description),
+				)
+			}
 			individual_model = create_model(
 				f'{name.title().replace("_", "")}ActionModel',
 				__base__=ActionModel,
-				**{
-					name: (
-						action.param_model,
-						Field(description=action.description),
-					)
-				},
+				**field_definitions,
 			)
 			individual_action_models.append(individual_model)
 
@@ -533,8 +535,9 @@ class Registry(Generic[Context]):
 			# Create a Union type using RootModel that properly delegates ActionModel methods
 			union_type = Union[tuple(individual_action_models)]
 
-			class ActionModelUnion(RootModel[union_type]):  # type: ignore
+			class ActionModelUnion(RootModel[Any]):
 				"""Union of all available action models that maintains ActionModel interface"""
+				root: Any
 
 				def get_index(self) -> int | None:
 					"""Delegate get_index to the underlying action model"""
