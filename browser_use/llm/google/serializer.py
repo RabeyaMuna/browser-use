@@ -31,7 +31,7 @@ class GoogleMessageSerializer:
 		    - system_message: System instruction string or None
 		"""
 
-		messages = [m.model_copy(deep=True) for m in messages]
+		messages = list(messages)
 
 		formatted_messages: ContentListUnion = []
 		system_message: str | None = None

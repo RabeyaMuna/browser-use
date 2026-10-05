@@ -196,7 +196,7 @@ def are_images_identical(img_path1: str, img_path2: str) -> bool:
 				return False
 
 			# Compare pixel data
-			return list(img1.getdata()) == list(img2.getdata())
+			return list(img1.convert('RGB').getdata()) == list(img2.convert('RGB').getdata())
 	except Exception as e:
 		logger.warning(f'Failed to compare images {img_path1} and {img_path2}: {e}')
 		return False
@@ -267,7 +267,7 @@ async def comprehensive_judge(
 	selected_images = filter_images(screenshot_paths, max_images)
 
 	# Encode images
-	encoded_images: list[ContentPartImageParam] = []
+	encoded_images = []
 	for img_path in selected_images:
 		if Path(img_path).exists():
 			encoded_img = encode_image(img_path)
@@ -423,12 +423,9 @@ Respond with EXACTLY this JSON structure (no additional text before or after):
 Evaluate this agent execution given the criteria and respond with the exact JSON structure requested."""
 
 	# Build messages
-	content_parts: list[ContentPartTextParam | ContentPartImageParam] = [ContentPartTextParam(text=user_prompt)]
-	content_parts.extend(encoded_images)
-
 	messages: list[BaseMessage] = [
 		SystemMessage(content=system_prompt),
-		UserMessage(content=content_parts),
+		UserMessage(content=[ContentPartTextParam(text=user_prompt), *encoded_images]),
 	]
 
 	# Get structured response

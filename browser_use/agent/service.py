@@ -108,7 +108,7 @@ Context = TypeVar('Context')
 AgentHookFunc = Callable[['Agent'], Awaitable[None]]
 
 
-class Agent(Generic[Context, AgentStructuredOutput]):
+class Agent(Generic[Context]):
 	browser_session: BrowserSession | None = None
 	_logger: logging.Logger | None = None
 
