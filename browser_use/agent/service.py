@@ -15,41 +15,40 @@ from typing import Any, Generic, TypeVar
 
 from dotenv import load_dotenv
 
-from browser_use.browser.session import DEFAULT_BROWSER_PROFILE
-
-load_dotenv()
-
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import (
-	BaseMessage,
-	HumanMessage,
-	SystemMessage,
+    BaseMessage,
+    HumanMessage,
+    SystemMessage,
 )
 from playwright.async_api import Browser, BrowserContext, Page
 from pydantic import BaseModel, ValidationError
 
 from browser_use.agent.gif import create_history_gif
 from browser_use.agent.memory import Memory, MemoryConfig
-from browser_use.agent.message_manager.service import MessageManager, MessageManagerSettings
+from browser_use.agent.message_manager.service import (
+    MessageManager,
+    MessageManagerSettings,
+)
 from browser_use.agent.message_manager.utils import (
-	convert_input_messages,
-	extract_json_from_model_output,
-	is_model_without_tool_support,
-	save_conversation,
+    convert_input_messages,
+    extract_json_from_model_output,
+    is_model_without_tool_support,
+    save_conversation,
 )
 from browser_use.agent.prompts import AgentMessagePrompt, PlannerPrompt, SystemPrompt
 from browser_use.agent.views import (
-	ActionResult,
-	AgentError,
-	AgentHistory,
-	AgentHistoryList,
-	AgentOutput,
-	AgentSettings,
-	AgentState,
-	AgentStepInfo,
-	BrowserStateHistory,
-	StepMetadata,
-	ToolCallingMethod,
+    ActionResult,
+    AgentError,
+    AgentHistory,
+    AgentHistoryList,
+    AgentOutput,
+    AgentSettings,
+    AgentState,
+    AgentStepInfo,
+    BrowserStateHistory,
+    StepMetadata,
+    ToolCallingMethod,
 )
 from browser_use.browser import BrowserProfile, BrowserSession
 
@@ -58,15 +57,15 @@ from browser_use.browser.views import BrowserStateSummary
 from browser_use.controller.registry.views import ActionModel
 from browser_use.controller.service import Controller
 from browser_use.dom.history_tree_processor.service import (
-	DOMHistoryElement,
-	HistoryTreeProcessor,
+    DOMHistoryElement,
+    HistoryTreeProcessor,
 )
 from browser_use.exceptions import LLMException
 from browser_use.telemetry.service import ProductTelemetry
-from browser_use.telemetry.views import (
-	AgentTelemetryEvent,
-)
+from browser_use.telemetry.views import AgentTelemetryEvent
 from browser_use.utils import time_execution_async, time_execution_sync
+
+load_dotenv()
 
 logger = logging.getLogger(__name__)
 
