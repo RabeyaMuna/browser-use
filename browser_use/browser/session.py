@@ -40,6 +40,7 @@ from browser_use.browser.events import (
 )
 from browser_use.browser.profile import BrowserProfile
 from browser_use.browser.views import TabInfo
+from uuid_extensions import uuid7str
 from browser_use.utils import logger
 
 if TYPE_CHECKING:
