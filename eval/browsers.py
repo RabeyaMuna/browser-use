@@ -99,7 +99,6 @@ def create_browserbase_session() -> str:
 		bb = Browserbase(api_key=BROWSERBASE_API_KEY)
 		session = bb.sessions.create(
 			project_id=BROWSERBASE_PROJECT_ID,
-			proxies=True,
 		)
 
 		return session.connect_url
@@ -116,7 +115,6 @@ async def create_hyperbrowser_session() -> str:
 
 	try:
 		from hyperbrowser import AsyncHyperbrowser
-		from hyperbrowser.models import CreateSessionParams
 	except ImportError:
 		raise ImportError(
 			'hyperbrowser package is required for Hyperbrowser functionality. Install it with: pip install hyperbrowser'
@@ -126,9 +124,7 @@ async def create_hyperbrowser_session() -> str:
 		client = AsyncHyperbrowser(api_key=HYPERBROWSER_API_KEY)
 
 		session = await client.sessions.create(
-			params=CreateSessionParams(
-				use_stealth=True,
-			)
+			use_stealth=True,
 		)
 
 		await client.close()
