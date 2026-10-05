@@ -4,7 +4,7 @@ description = "Make websites accessible for AI agents"
 authors = [{ name = "Gregor Zunic" }]
 version = "0.3.2"
 readme = "README.md"
-requires-python = ">=3.11,<4.0"
+requires-python = ">=3.11,<3.13"
 classifiers = [
     "Programming Language :: Python :: 3",
     "License :: OSI Approved :: MIT License",
@@ -165,7 +165,8 @@ required-environments = [
     "sys_platform == 'win32' and platform_machine == 'x86_64'",
     # "sys_platform == 'win32' and platform_machine == 'arm64'",  # no pytorch wheels available yet
 ]
-dev-dependencies = [
+[dependency-groups]
+dev = [
     "ruff>=0.11.2",
     "tokencost>=0.1.16",
     "build>=1.2.2",
