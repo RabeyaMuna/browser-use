@@ -111,7 +111,7 @@ class ProductTelemetry:
 			if not os.path.exists(self.USER_ID_PATH):
 				os.makedirs(os.path.dirname(self.USER_ID_PATH), exist_ok=True)
 				with open(self.USER_ID_PATH, 'w') as f:
-					new_user_id = uuid7str()
+					new_user_id = uuid7str(None)
 					f.write(new_user_id)
 				self._curr_user_id = new_user_id
 			else:
