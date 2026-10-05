@@ -263,7 +263,7 @@ def are_images_identical(img_path1: str, img_path2: str) -> bool:
 				return False
 
 			# Compare pixel data
-			return list(img1.getdata()) == list(img2.getdata())
+			return list(img1.getdata().tolist()) == list(img2.getdata().tolist())
 	except Exception as e:
 		logger.warning(f'Failed to compare images {img_path1} and {img_path2}: {e}')
 		return False
@@ -460,12 +460,9 @@ Respond with EXACTLY this JSON structure (no additional text):
 Analyze this execution and respond with the exact JSON structure requested."""
 
 	# Build messages
-	content_parts: list[ContentPartTextParam | ContentPartImageParam] = [ContentPartTextParam(text=user_prompt)]
-	content_parts.extend(encoded_images)
-
 	messages: list[BaseMessage] = [
 		SystemMessage(content=system_prompt),
-		UserMessage(content=content_parts),
+		UserMessage(content=[ContentPartTextParam(text=user_prompt), *encoded_images]),
 	]
 
 	# Get structured response

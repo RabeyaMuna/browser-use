@@ -1,7 +1,7 @@
 import json
 import logging
 import re
-from typing import TypeVar
+from typing import TypeVar, Type
 
 from groq import APIStatusError
 from pydantic import BaseModel
@@ -17,7 +17,7 @@ class ParseFailedGenerationError(Exception):
 
 def try_parse_groq_failed_generation(
 	error: APIStatusError,
-	output_format: type[T],
+	output_format: Type[T],
 ) -> T:
 	"""Extract JSON from model output, handling both plain JSON and code-block-wrapped JSON."""
 	try:
