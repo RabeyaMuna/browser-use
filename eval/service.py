@@ -402,7 +402,7 @@ def setup_signal_handlers():
 	signal.signal(signal.SIGTERM, signal_handler)
 
 
-def encode_image(image):
+def encode_image(image: Image.Image) -> str:
 	"""Convert a PIL image to base64 string."""
 	if image.mode == 'RGBA':
 		image = image.convert('RGB')
@@ -431,7 +431,7 @@ async def identify_key_points(task, model):
 		{'role': 'system', 'content': system_msg},
 		{
 			'role': 'user',
-			'content': [{'type': 'text', 'text': text}],
+			'content': text,
 		},
 	]
 	response = await model.ainvoke(messages)
@@ -478,13 +478,7 @@ The snapshot of the web page is shown in the image."""
 		{'role': 'system', 'content': system_msg},
 		{
 			'role': 'user',
-			'content': [
-				{'type': 'text', 'text': text},
-				{
-					'type': 'image_url',
-					'image_url': {'url': f'data:image/jpeg;base64,{jpg_base64_str}', 'detail': 'high'},
-				},
-			],
+			'content': text,
 		},
 	]
 	response = await model.ainvoke(messages)
