@@ -58,3 +58,8 @@ tmp
 py311/
 design.md
 myenv/
+# Shell redirection artifacts
+=[0-9]*
+>[0-9]*
+*.tmp
+*.log

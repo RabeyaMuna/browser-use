@@ -20,17 +20,16 @@ from browser_use.browser.session import DEFAULT_BROWSER_PROFILE
 load_dotenv()
 
 from langchain_core.language_models.chat_models import BaseChatModel
-from langchain_core.messages import (
-	BaseMessage,
-	HumanMessage,
-	SystemMessage,
-)
+from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
 from playwright.async_api import Browser, BrowserContext, Page
 from pydantic import BaseModel, ValidationError
 
 from browser_use.agent.gif import create_history_gif
 from browser_use.agent.memory import Memory, MemoryConfig
-from browser_use.agent.message_manager.service import MessageManager, MessageManagerSettings
+from browser_use.agent.message_manager.service import (
+	MessageManager,
+	MessageManagerSettings,
+)
 from browser_use.agent.message_manager.utils import (
 	convert_input_messages,
 	extract_json_from_model_output,
@@ -63,9 +62,7 @@ from browser_use.dom.history_tree_processor.service import (
 )
 from browser_use.exceptions import LLMException
 from browser_use.telemetry.service import ProductTelemetry
-from browser_use.telemetry.views import (
-	AgentTelemetryEvent,
-)
+from browser_use.telemetry.views import AgentTelemetryEvent
 from browser_use.utils import time_execution_async, time_execution_sync
 
 logger = logging.getLogger(__name__)
@@ -234,15 +231,17 @@ class Agent(Generic[Context]):
 			self.settings.use_vision_for_planner = False
 
 		logger.info(
-			f'🧠 Starting a browser-use agent {self.version} with base_model={self.model_name}'
-			f'{" +tools" if self.tool_calling_method == "function_calling" else ""}'
-			f'{" +rawtools" if self.tool_calling_method == "raw" else ""}'
-			f'{" +vision" if self.settings.use_vision else ""}'
-			f'{" +memory" if self.enable_memory else ""}'
-			f' extraction_model={getattr(self.settings.page_extraction_llm, "model_name", None)}'
-			f'{f" planner_model={self.planner_model_name}" if self.planner_model_name else ""}'
-			f'{" +reasoning" if self.settings.is_planner_reasoning else ""}'
-			f'{" +vision" if self.settings.use_vision_for_planner else ""} '
+			(
+				f'🧠 Starting a browser-use agent {self.version} with base_model={self.model_name}'
+				f'{" +tools" if self.tool_calling_method == "function_calling" else ""}'
+				f'{" +rawtools" if self.tool_calling_method == "raw" else ""}'
+				f'{" +vision" if self.settings.use_vision else ""}'
+				f'{" +memory" if self.enable_memory else ""}'
+				f' extraction_model={getattr(self.settings.page_extraction_llm, "model_name", None)}'
+				f'{f" planner_model={self.planner_model_name}" if self.planner_model_name else ""}'
+				f'{" +reasoning" if self.settings.is_planner_reasoning else ""}'
+				f'{" +vision" if self.settings.use_vision_for_planner else ""} '
+			)
 		)
 
 		# Initialize available actions for system prompt (only non-filtered actions)
@@ -528,8 +527,10 @@ class Agent(Generic[Context]):
 
 			if method == 'raw':
 				# For raw mode, test JSON response format
-				test_prompt = f"""{CAPITAL_QUESTION}
-					Respond with a JSON object like: {{"answer": "city_name_in_lowercase"}}"""
+				test_prompt = (
+					f"{CAPITAL_QUESTION}\n"
+					"Respond with a JSON object like: {\"answer\": \"city_name_in_lowercase\"}"
+				)
 
 				response = self.llm.invoke([test_prompt])
 				# Basic validation of response
@@ -1526,14 +1527,14 @@ class Agent(Generic[Context]):
 	async def _validate_output(self) -> bool:
 		"""Validate the output of the last action is what the user wanted"""
 		system_msg = (
-			f'You are a validator of an agent who interacts with a browser. '
-			f'Validate if the output of last action is what the user wanted and if the task is completed. '
-			f'If the task is unclear defined, you can let it pass. But if something is missing or the image does not show what was requested dont let it pass. '
-			f'Try to understand the page and help the model with suggestions like scroll, do x, ... to get the solution right. '
-			f'Task to validate: {self.task}. Return a JSON object with 2 keys: is_valid and reason. '
-			f'is_valid is a boolean that indicates if the output is correct. '
-			f'reason is a string that explains why it is valid or not.'
-			f' example: {{"is_valid": false, "reason": "The user wanted to search for "cat photos", but the agent searched for "dog photos" instead."}}'
+			'You are a validator of an agent who interacts with a browser. '
+			'Validate if the output of last action is what the user wanted and if the task is completed. '
+			'If the task is unclear defined, you can let it pass. But if something is missing or the image does not show what was requested dont let it pass. '
+			'Try to understand the page and help the model with suggestions like scroll, do x, ... to get the solution right. '
+			'Task to validate: {self.task}. Return a JSON object with 2 keys: is_valid and reason. '
+			'is_valid is a boolean that indicates if the output is correct. '
+			'reason is a string that explains why it is valid or not.'
+			' example: {{"is_valid": false, "reason": "The user wanted to search for "cat photos", but the agent searched for "dog photos" instead."}}'
 		)
 
 		if self.browser_context:
