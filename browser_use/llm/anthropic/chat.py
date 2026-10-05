@@ -70,7 +70,7 @@ class ChatAnthropic(BaseChatModel):
 		# Create client_params dict with non-None values and non-NotGiven values
 		client_params = {}
 		for k, v in base_params.items():
-			if v is not None and v is not NotGiven():
+			if v is not None and v is not NOT_GIVEN:
 				client_params[k] = v
 
 		return client_params
@@ -133,7 +133,7 @@ class ChatAnthropic(BaseChatModel):
 				response = await self.get_client().messages.create(
 					model=self.model,
 					messages=anthropic_messages,
-					system=system_prompt or NOT_GIVEN,
+					system=system_prompt if system_prompt is not None else NOT_GIVEN,
 					**self._get_client_params_for_invoke(),
 				)
 
@@ -176,7 +176,7 @@ class ChatAnthropic(BaseChatModel):
 					model=self.model,
 					messages=anthropic_messages,
 					tools=[tool],
-					system=system_prompt or NOT_GIVEN,
+					system=system_prompt if system_prompt is not None else NOT_GIVEN,
 					tool_choice=tool_choice,
 					**self._get_client_params_for_invoke(),
 				)
