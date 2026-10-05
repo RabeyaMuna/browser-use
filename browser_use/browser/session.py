@@ -12,7 +12,7 @@ import time
 from dataclasses import dataclass
 from functools import wraps
 from pathlib import Path
-from typing import Any, Self
+from typing import Any, List, Optional, Self, Union
 from urllib.parse import urlparse
 
 import anyio
@@ -1675,7 +1675,7 @@ class BrowserSession(BaseModel):
 					f'⚠️ Failed to resize browser window to {_log_size(self.browser_profile.window_size)} via CDP setWindowBounds: {type(e).__name__}: {e}'
 				)
 
-	def _set_browser_keep_alive(self, keep_alive: bool | None) -> None:
+	def _set_browser_keep_alive(self, keep_alive: Optional[bool]) -> None:
 		"""set the keep_alive flag on the browser_profile, defaulting to True if keep_alive is None"""
 		if self.browser_profile.keep_alive is None:
 			self.browser_profile.keep_alive = keep_alive
@@ -1988,7 +1988,7 @@ class BrowserSession(BaseModel):
 		return self.agent_current_page
 
 	@property
-	def tabs(self) -> list[Page]:
+	def tabs(self) -> List[Page]:
 		if not self.browser_context:
 			return []
 		return list(self.browser_context.pages)
@@ -2049,14 +2049,14 @@ class BrowserSession(BaseModel):
 			# Don't raise the error since this is not critical functionality
 
 	@require_healthy_browser(usable_page=True, reopen_page=True)
-	async def get_dom_element_by_index(self, index: int) -> DOMElementNode | None:
+	async def get_dom_element_by_index(self, index: int) -> Optional[DOMElementNode]:
 		"""Get DOM element by index."""
 		selector_map = await self.get_selector_map()
 		return selector_map.get(index)
 
 	@require_healthy_browser(usable_page=True, reopen_page=True)
 	@time_execution_async('--click_element_node')
-	async def _click_element_node(self, element_node: DOMElementNode) -> str | None:
+	async def _click_element_node(self, element_node: DOMElementNode) -> Optional[str]:
 		"""
 		Optimized method to click an element using xpath.
 		"""
@@ -2168,7 +2168,7 @@ class BrowserSession(BaseModel):
 	@time_execution_async('--get_tabs_info')
 	@retry(timeout=6, retries=1)
 	@require_healthy_browser(usable_page=False, reopen_page=False)
-	async def get_tabs_info(self) -> list[TabInfo]:
+	async def get_tabs_info(self) -> List[TabInfo]:
 		"""Get information about all tabs"""
 		assert self.browser_context is not None, 'BrowserContext is not set up'
 		tabs_info = []
@@ -2238,7 +2238,7 @@ class BrowserSession(BaseModel):
 	@observe_debug()
 	@retry(retries=0, timeout=30, wait=1, semaphore_timeout=10, semaphore_limit=1, semaphore_scope='self', semaphore_lax=True)
 	@require_healthy_browser(usable_page=False, reopen_page=False)
-	async def navigate(self, url: str = 'about:blank', new_tab: bool = False, timeout_ms: int | None = None) -> Page:
+	async def navigate(self, url: str = 'about:blank', new_tab: bool = False, timeout_ms: Optional[int] = None) -> Page:
 		"""
 		Universal navigation method that handles all navigation scenarios.
 
@@ -2373,7 +2373,7 @@ class BrowserSession(BaseModel):
 		page = await self.get_current_page()
 		return await page.evaluate(script)
 
-	async def get_cookies(self) -> list[dict[str, Any]]:
+	async def get_cookies(self) -> List[dict[str, Any]]:
 		if self.browser_context:
 			return [dict(x) for x in await self.browser_context.cookies()]
 		return []
@@ -2385,7 +2385,7 @@ class BrowserSession(BaseModel):
 		"""
 		await self.save_storage_state(*args, **kwargs)
 
-	async def _save_cookies_to_file(self, path: Path, cookies: list[dict[str, Any]] | None) -> None:
+	async def _save_cookies_to_file(self, path: Path, cookies: Optional[List[dict[str, Any]]]) -> None:
 		if not (path or self.browser_profile.cookies_file):
 			return
 
@@ -2414,7 +2414,7 @@ class BrowserSession(BaseModel):
 				f'❌ Failed to save cookies to cookies_file= {_log_pretty_path(cookies_file_path)}: {type(e).__name__}: {e}'
 			)
 
-	async def _save_storage_state_to_file(self, path: str | Path, storage_state: dict[str, Any] | None) -> None:
+	async def _save_storage_state_to_file(self, path: Union[str, Path], storage_state: Optional[dict[str, Any]]) -> None:
 		try:
 			json_path = Path(path).expanduser().resolve()
 			json_path.parent.mkdir(parents=True, exist_ok=True)
@@ -2451,13 +2451,13 @@ class BrowserSession(BaseModel):
 	@retry(
 		timeout=5, retries=1, semaphore_limit=1, semaphore_scope='self'
 	)  # users can share JSON between browsers, this should really be 'multiprocess' not 'self
-	async def save_storage_state(self, path: Path | None = None) -> None:
+	async def save_storage_state(self, path: Optional[Path] = None) -> None:
 		"""
 		Save cookies to the specified path or the configured cookies_file and/or storage_state.
 		"""
 		await self._unsafe_save_storage_state(path)
 
-	async def _unsafe_save_storage_state(self, path: Path | None = None) -> None:
+	async def _unsafe_save_storage_state(self, path: Optional[Path] = None) -> None:
 		"""
 		Unsafe storage state save logic without retry protection.
 		"""
@@ -2581,7 +2581,7 @@ class BrowserSession(BaseModel):
 		await self.load_storage_state(*args, **kwargs)
 
 	@property
-	def downloaded_files(self) -> list[str]:
+	def downloaded_files(self) -> List[str]:
 		"""
 		Get list of all files downloaded during this browser session.
 
@@ -2795,7 +2795,7 @@ class BrowserSession(BaseModel):
 			self.logger.debug(f'💤 Page network traffic calmed down after {now - start_time:.2f} seconds')
 
 	@observe_debug(ignore_input=True, ignore_output=True, name='wait_for_page_and_frames_load')
-	async def _wait_for_page_and_frames_load(self, timeout_overwrite: float | None = None):
+	async def _wait_for_page_and_frames_load(self, timeout_overwrite: Optional[float] = None):
 		"""
 		Ensures page is fully loaded before continuing.
 		Waits for either network to be idle or minimum WAIT_TIME, whichever is longer.
@@ -3361,7 +3361,7 @@ class BrowserSession(BaseModel):
 			self.logger.error(f'❌ Using raw CDP to force-close crashed page failed: {type(e).__name__}: {e}')
 			return False
 
-	async def _try_reopen_url(self, url: str, timeout_ms: int | None = None) -> bool:
+	async def _try_reopen_url(self, url: str, timeout_ms: Optional[int] = None) -> bool:
 		"""Try to reopen a URL in a new page and check if it's responsive."""
 		if not url or is_new_tab_page(url):
 			return False
@@ -3475,7 +3475,7 @@ class BrowserSession(BaseModel):
 				'Browser is unable to load any new about:blank pages (something is very wrong or browser is extremely overloaded)'
 			)
 
-	async def _recover_unresponsive_page(self, calling_method: str, timeout_ms: int | None = None) -> None:
+	async def _recover_unresponsive_page(self, calling_method: str, timeout_ms: Optional[int] = None) -> None:
 		"""Recover from an unresponsive page by closing and reopening it."""
 		self.logger.warning(f'⚠️ Page JS engine became unresponsive in {calling_method}(), attempting recovery...')
 		timeout_ms = min(3000, int(timeout_ms or self.browser_profile.default_navigation_timeout or 5000))
@@ -3545,7 +3545,7 @@ class BrowserSession(BaseModel):
 	)
 	@require_healthy_browser(usable_page=True, reopen_page=True)
 	@time_execution_async('--take_screenshot')
-	async def take_screenshot(self, full_page: bool = False) -> str | None:
+	async def take_screenshot(self, full_page: bool = False) -> Optional[str]:
 		"""
 		Returns a base64 encoded screenshot of the current page using CDP.
 
@@ -3619,7 +3619,7 @@ class BrowserSession(BaseModel):
 	# region - User Actions
 
 	@staticmethod
-	async def _get_unique_filename(directory: str | Path, filename: str) -> str:
+	async def _get_unique_filename(directory: Union[str, Path], filename: str) -> str:
 		"""Generate a unique filename for downloads by appending (1), (2), etc., if a file already exists."""
 		base, ext = os.path.splitext(filename)
 		counter = 1
@@ -3828,7 +3828,7 @@ class BrowserSession(BaseModel):
 
 	@require_healthy_browser(usable_page=True, reopen_page=True)
 	@time_execution_async('--get_locate_element')
-	async def get_locate_element(self, element: DOMElementNode) -> ElementHandle | None:
+	async def get_locate_element(self, element: DOMElementNode) -> Optional[ElementHandle]:
 		page = await self.get_current_page()
 		current_frame = page
 
@@ -3912,7 +3912,7 @@ class BrowserSession(BaseModel):
 
 	@require_healthy_browser(usable_page=True, reopen_page=True)
 	@time_execution_async('--get_locate_element_by_xpath')
-	async def get_locate_element_by_xpath(self, xpath: str) -> ElementHandle | None:
+	async def get_locate_element_by_xpath(self, xpath: str) -> Optional[ElementHandle]:
 		"""
 		Locates an element on the page using the provided XPath.
 		"""
@@ -3933,7 +3933,7 @@ class BrowserSession(BaseModel):
 
 	@require_healthy_browser(usable_page=True, reopen_page=True)
 	@time_execution_async('--get_locate_element_by_css_selector')
-	async def get_locate_element_by_css_selector(self, css_selector: str) -> ElementHandle | None:
+	async def get_locate_element_by_css_selector(self, css_selector: str) -> Optional[ElementHandle]:
 		"""
 		Locates an element on the page using the provided CSS selector.
 		"""
@@ -3957,8 +3957,8 @@ class BrowserSession(BaseModel):
 	@require_healthy_browser(usable_page=True, reopen_page=True)
 	@time_execution_async('--get_locate_element_by_text')
 	async def get_locate_element_by_text(
-		self, text: str, nth: int | None = 0, element_type: str | None = None
-	) -> ElementHandle | None:
+		self, text: str, nth: Optional[int] = 0, element_type: Optional[str] = None
+	) -> Optional[ElementHandle]:
 		"""
 		Locates an element on the page using the provided text.
 		If `nth` is provided, it returns the nth matching element (0-based).
@@ -4120,7 +4120,7 @@ class BrowserSession(BaseModel):
 
 	@observe_debug(ignore_input=True, ignore_output=True, name='get_element_by_index')
 	@require_healthy_browser(usable_page=True, reopen_page=True)
-	async def get_element_by_index(self, index: int) -> ElementHandle | None:
+	async def get_element_by_index(self, index: int) -> Optional[ElementHandle]:
 		selector_map = await self.get_selector_map()
 		element_handle = await self.get_locate_element(selector_map[index])
 		return element_handle
@@ -4146,7 +4146,7 @@ class BrowserSession(BaseModel):
 	@require_healthy_browser(usable_page=True, reopen_page=True)
 	async def find_file_upload_element_by_index(
 		self, index: int, max_height: int = 3, max_descendant_depth: int = 3
-	) -> DOMElementNode | None:
+	) -> Optional[DOMElementNode]:
 		"""
 		Find the closest file input to the selected element by traversing the DOM bottom-up.
 		At each level (up to max_height ancestors):
@@ -4162,7 +4162,7 @@ class BrowserSession(BaseModel):
 
 			candidate_element = selector_map[index]
 
-			def find_file_input_in_descendants(node: DOMElementNode, depth: int) -> DOMElementNode | None:
+			def find_file_input_in_descendants(node: DOMElementNode, depth: int) -> Optional[DOMElementNode]:
 				if depth < 0 or not isinstance(node, DOMElementNode):
 					return None
 				if self.is_file_input(node):
@@ -4525,7 +4525,7 @@ class BrowserSession(BaseModel):
 			self.logger.debug(f'Error checking PDF viewer: {type(e).__name__}: {e}')
 			return False
 
-	async def _auto_download_pdf_if_needed(self, page: Page) -> str | None:
+	async def _auto_download_pdf_if_needed(self, page: Page) -> Optional[str]:
 		"""
 		Check if the current page is a PDF viewer and automatically download the PDF if so.
 		Returns the download path if a PDF was downloaded, None otherwise.

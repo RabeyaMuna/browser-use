@@ -1,7 +1,7 @@
 import json
 from collections.abc import Mapping
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, TypeVar, overload
+from typing import TYPE_CHECKING, Any, TypeVar, overload, cast
 
 from anthropic import (
 	NOT_GIVEN,
@@ -215,7 +215,13 @@ class ChatAnthropicBedrock(ChatAWSBedrock):
 					if hasattr(content_block, 'type') and content_block.type == 'tool_use':
 						# Parse the tool input as the structured output
 						try:
-							return ChatInvokeCompletion(completion=output_format.model_validate(content_block.input), usage=usage)
+							tool_input = content_block.input
+							if isinstance(tool_input, str):
+								tool_input = json.loads(tool_input)
+							return ChatInvokeCompletion(
+								completion=output_format.model_validate(cast(dict[str, Any], tool_input)),
+								usage=usage,
+							)
 						except Exception as e:
 							# If validation fails, try to parse it as JSON first
 							if isinstance(content_block.input, str):
@@ -225,7 +231,6 @@ class ChatAnthropicBedrock(ChatAWSBedrock):
 									usage=usage,
 								)
 							raise e
-
 				# If no tool use block found, raise an error
 				raise ValueError('Expected tool use in response but none found')
 

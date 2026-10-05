@@ -4,7 +4,7 @@ import json
 import logging
 import os
 import re
-from typing import Generic, TypeVar, cast
+from typing import Generic, TypeVar, cast, Type
 
 try:
 	from lmnr import Laminar  # type: ignore
@@ -50,7 +50,7 @@ class Controller(Generic[Context]):
 	def __init__(
 		self,
 		exclude_actions: list[str] = [],
-		output_model: type[T] | None = None,
+		output_model: Type[T] | None = None,
 		display_files_in_done_text: bool = True,
 	):
 		self.registry = Registry[Context](exclude_actions)
@@ -1085,13 +1085,13 @@ Explain the content of the page and that the requested information is not availa
 			)
 
 	# Custom done action for structured output
-	def _register_done_action(self, output_model: type[T] | None, display_files_in_done_text: bool = True):
+	def _register_done_action(self, output_model: Type[T] | None, display_files_in_done_text: bool = True):
 		if output_model is not None:
 			self.display_files_in_done_text = display_files_in_done_text
 
 			@self.registry.action(
 				'Complete task - with return text and if the task is finished (success=True) or not yet completely finished (success=False), because last step is reached',
-				param_model=StructuredOutputAction[output_model],
+				param_model=StructuredOutputAction,
 			)
 			async def done(params: StructuredOutputAction):
 				# Exclude success from the output JSON since it's an internal parameter
@@ -1158,7 +1158,7 @@ Explain the content of the page and that the requested information is not availa
 					attachments=attachments,
 				)
 
-	def use_structured_output_action(self, output_model: type[T]):
+	def use_structured_output_action(self, output_model: Type[T]):
 		self._register_done_action(output_model)
 
 	# Register ---------------------------------------------------------------
@@ -1179,7 +1179,7 @@ Explain the content of the page and that the requested information is not availa
 		browser_session: BrowserSession,
 		#
 		page_extraction_llm: BaseChatModel | None = None,
-		sensitive_data: dict[str, str | dict[str, str]] | None = None,
+		sensitive_data: dict[str, dict[str, str] | str] | None = None,
 		available_file_paths: list[str] | None = None,
 		file_system: FileSystem | None = None,
 		#
