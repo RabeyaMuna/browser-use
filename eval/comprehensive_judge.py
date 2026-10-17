@@ -695,7 +695,7 @@ async def evaluate_task_with_comprehensive_judge(
 		)
 
 		# Convert to dict for storage
-		judge_dict = judge_result.model_dump()
+		judge_dict = judge_result.dict()
 
 		# Save back to result file using async wrapper
 		result_data['comprehensive_judge_evaluation'] = judge_dict
