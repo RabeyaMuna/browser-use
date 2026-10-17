@@ -73,7 +73,7 @@ class ChatAnthropicBedrock(ChatAWSBedrock):
 					'aws_access_key': credentials.access_key,
 					'aws_secret_key': credentials.secret_key,
 					'aws_session_token': credentials.token,
-					'aws_region': self.session.region_name,
+					'region_name': self.session.region_name,
 				}
 			)
 		else:
@@ -83,7 +83,7 @@ class ChatAnthropicBedrock(ChatAWSBedrock):
 			if self.aws_secret_key:
 				client_params['aws_secret_key'] = self.aws_secret_key
 			if self.aws_region:
-				client_params['aws_region'] = self.aws_region
+				client_params['region_name'] = self.aws_region
 			if self.aws_session_token:
 				client_params['aws_session_token'] = self.aws_session_token
 
