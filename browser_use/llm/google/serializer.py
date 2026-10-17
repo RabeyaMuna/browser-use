@@ -92,7 +92,9 @@ class GoogleMessageSerializer:
 
 			# Create the Content object
 			if message_parts:
-				final_message = Content(role=role, parts=message_parts)
+				# Ensure role is a valid literal for Content constructor
+				valid_role: Literal['user', 'model'] = 'user' if role != 'model' else 'model'
+				final_message = Content(role=valid_role, parts=message_parts)
 				formatted_messages.append(final_message)
 
 		return formatted_messages, system_message

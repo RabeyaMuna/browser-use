@@ -95,7 +95,8 @@ class ChatAnthropicBedrock(ChatAWSBedrock):
 		if self.default_query:
 			client_params['default_query'] = self.default_query
 
-		return client_params
+		# Filter out None values to avoid passing them to AsyncAnthropicBedrock
+		return {k: v for k, v in client_params.items() if v is not None}
 
 	def _get_client_params_for_invoke(self) -> dict[str, Any]:
 		"""Prepare client parameters dictionary for invoke."""
