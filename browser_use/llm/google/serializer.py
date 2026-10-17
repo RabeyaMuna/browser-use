@@ -2,13 +2,6 @@ import base64
 
 from google.genai.types import Content, ContentListUnion, Part
 
-from browser_use.llm.messages import (
-	AssistantMessage,
-	BaseMessage,
-	SystemMessage,
-	UserMessage,
-)
-
 
 class GoogleMessageSerializer:
 	"""Serializer for converting messages to Google Gemini format."""
@@ -93,6 +86,6 @@ class GoogleMessageSerializer:
 			# Create the Content object
 			if message_parts:
 				final_message = Content(role=role, parts=message_parts)
-				formatted_messages.append(final_message)
+				formatted_messages.append(final_message)  # type: ignore[arg-type]
 
 		return formatted_messages, system_message
