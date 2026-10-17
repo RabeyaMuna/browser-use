@@ -10,10 +10,6 @@ from typing import Any
 
 from dotenv import load_dotenv
 
-from browser_use.llm.anthropic.chat import ChatAnthropic
-from browser_use.llm.google.chat import ChatGoogle
-from browser_use.llm.openai.chat import ChatOpenAI
-
 load_dotenv()
 
 try:

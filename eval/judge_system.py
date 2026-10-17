@@ -12,6 +12,7 @@ from pathlib import Path
 from typing import Any
 
 from PIL import Image
+from typing import Iterable
 from pydantic import BaseModel
 
 from browser_use.llm.base import BaseChatModel
@@ -431,7 +432,7 @@ Evaluate this agent execution given the criteria and respond with the exact JSON
 	try:
 		response = await model.ainvoke(messages, output_format=JudgeResult)
 		logger.info(f'Judge response: {response}')
-		return response.completion
+		return response
 
 	except Exception as e:
 		logger.error(f'Judge evaluation failed: {e}')
