@@ -429,9 +429,9 @@ Evaluate this agent execution given the criteria and respond with the exact JSON
 
 	# Get structured response
 	try:
-		response = await model.ainvoke(messages, output_format=JudgeResult)
+		response = await model.with_structured_output(JudgeResult).ainvoke(messages)
 		logger.info(f'Judge response: {response}')
-		return response.completion
+		return response
 
 	except Exception as e:
 		logger.error(f'Judge evaluation failed: {e}')

@@ -79,16 +79,18 @@ class GoogleMessageSerializer:
 					elif part.type == 'image_url':
 						# Handle images
 						url = part.image_url.url
-
-						# Format: data:image/png;base64,<data>
-						header, data = url.split(',', 1)
-						# Decode base64 to bytes
-						image_bytes = base64.b64decode(data)
-
-						# Add image part
-						image_part = Part.from_bytes(data=image_bytes, mime_type='image/png')
-
-						message_parts.append(image_part)
+						if url.startswith('data:') and ',' in url:
+							# Format: data:image/png;base64,<data>
+							header, data = url.split(',', 1)
+							# Decode base64 to bytes
+							try:
+								image_bytes = base64.b64decode(data)
+								# Add image part
+								image_part = Part.from_bytes(data=image_bytes, mime_type='image/png')
+								message_parts.append(image_part)
+							except (ValueError, base64.binascii.Error):
+								# Skip invalid base64 data
+								pass
 
 			# Create the Content object
 			if message_parts:

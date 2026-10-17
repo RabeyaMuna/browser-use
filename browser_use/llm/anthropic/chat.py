@@ -75,10 +75,10 @@ class ChatAnthropic(BaseChatModel):
 
 		return client_params
 
-	def _get_client_params_for_invoke(self):
+	def _get_client_params_for_invoke(self) -> dict[str, Any]:
 		"""Prepare client parameters dictionary for invoke."""
 
-		client_params = {}
+		client_params: dict[str, Any] = {}
 
 		if self.temperature is not None:
 			client_params['temperature'] = self.temperature
@@ -133,7 +133,7 @@ class ChatAnthropic(BaseChatModel):
 				response = await self.get_client().messages.create(
 					model=self.model,
 					messages=anthropic_messages,
-					system=system_prompt or NOT_GIVEN,
+					system=system_prompt if system_prompt else NOT_GIVEN,
 					**self._get_client_params_for_invoke(),
 				)
 
@@ -176,7 +176,7 @@ class ChatAnthropic(BaseChatModel):
 					model=self.model,
 					messages=anthropic_messages,
 					tools=[tool],
-					system=system_prompt or NOT_GIVEN,
+					system=system_prompt if system_prompt else NOT_GIVEN,
 					tool_choice=tool_choice,
 					**self._get_client_params_for_invoke(),
 				)
@@ -188,15 +188,14 @@ class ChatAnthropic(BaseChatModel):
 					if hasattr(content_block, 'type') and content_block.type == 'tool_use':
 						# Parse the tool input as the structured output
 						try:
-							return ChatInvokeCompletion(completion=output_format.model_validate(content_block.input), usage=usage)
-						except Exception as e:
-							# If validation fails, try to parse it as JSON first
+							# content_block.input is Any, but we expect it to be a dict or a JSON string
 							if isinstance(content_block.input, str):
 								data = json.loads(content_block.input)
-								return ChatInvokeCompletion(
-									completion=output_format.model_validate(data),
-									usage=usage,
-								)
+								return ChatInvokeCompletion(completion=output_format.model_validate(data), usage=usage)
+							else:
+								# Assume it's already a dict or compatible object
+								return ChatInvokeCompletion(completion=output_format.model_validate(content_block.input), usage=usage)
+						except Exception as e:
 							raise e
 
 				# If no tool use block found, raise an error
