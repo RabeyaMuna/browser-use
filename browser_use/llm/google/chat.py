@@ -201,11 +201,13 @@ class ChatGoogle(BaseChatModel):
 			config['thinking_config'] = thinking_config_dict
 
 		async def _make_api_call():
+			# Use the contents variable defined in the outer scope
+			local_contents = contents
 			if output_format is None:
 				# Return string response
 				response = await self.get_client().aio.models.generate_content(
 					model=self.model,
-					contents=contents,  # type: ignore
+					contents=local_contents,
 					config=config,
 				)
 
@@ -232,7 +234,7 @@ class ChatGoogle(BaseChatModel):
 
 					response = await self.get_client().aio.models.generate_content(
 						model=self.model,
-						contents=contents,
+						contents=local_contents,
 						config=config,
 					)
 
@@ -282,13 +284,13 @@ class ChatGoogle(BaseChatModel):
 						messages[-1].content += json_instruction
 
 					# Re-serialize with modified messages
-					contents, _ = GoogleMessageSerializer.serialize_messages(
+					local_contents, _ = GoogleMessageSerializer.serialize_messages(
 						messages, include_system_in_user=self.include_system_in_user
 					)
 
 					response = await self.get_client().aio.models.generate_content(
 						model=self.model,
-						contents=contents,  # type: ignore
+						contents=local_contents,
 						config=config,
 					)
 
