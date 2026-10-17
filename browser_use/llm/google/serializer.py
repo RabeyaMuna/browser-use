@@ -3,10 +3,10 @@ import base64
 from google.genai.types import Content, ContentListUnion, Part
 
 from browser_use.llm.messages import (
-	AssistantMessage,
-	BaseMessage,
-	SystemMessage,
-	UserMessage,
+    AssistantMessage,
+    BaseMessage,
+    SystemMessage,
+    UserMessage,
 )
 
 
