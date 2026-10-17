@@ -96,7 +96,8 @@ class ChatAnthropicBedrock(ChatAWSBedrock):
 		if self.default_query:
 			client_params['default_query'] = self.default_query
 
-		return client_params
+		# Filter out None values to avoid type errors
+		return {k: v for k, v in client_params.items() if v is not None}
 
 	def _get_client_params_for_invoke(self) -> dict[str, Any]:
 		"""Prepare client parameters dictionary for invoke."""
@@ -115,7 +116,8 @@ class ChatAnthropicBedrock(ChatAWSBedrock):
 		if self.stop_sequences is not None:
 			client_params['stop_sequences'] = self.stop_sequences
 
-		return client_params
+		# Filter out None values to avoid type errors
+		return {k: v for k, v in client_params.items() if v is not None}
 
 	def get_client(self) -> AsyncAnthropicBedrock:
 		"""
@@ -163,7 +165,7 @@ class ChatAnthropicBedrock(ChatAWSBedrock):
 				response = await self.get_client().messages.create(
 					model=self.model,
 					messages=anthropic_messages,
-					system=system_prompt or NOT_GIVEN,
+					system=system_prompt if system_prompt else NOT_GIVEN,
 					**self._get_client_params_for_invoke(),
 				)
 
@@ -206,7 +208,7 @@ class ChatAnthropicBedrock(ChatAWSBedrock):
 					model=self.model,
 					messages=anthropic_messages,
 					tools=[tool],
-					system=system_prompt or NOT_GIVEN,
+					system=system_prompt if system_prompt else NOT_GIVEN,
 					tool_choice=tool_choice,
 					**self._get_client_params_for_invoke(),
 				)
