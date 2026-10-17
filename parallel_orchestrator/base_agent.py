@@ -86,9 +86,6 @@ Return the subtasks as a JSON array:
 			response_text = response.completion
 
 			# Extract JSON array from response
-			import json
-			import re
-
 			# Find JSON array in the response
 			json_match = re.search(r'\[.*\]', response_text, re.DOTALL)
 			if json_match:
