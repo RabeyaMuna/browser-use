@@ -46,7 +46,7 @@ class Registry(Generic[Context]):
 		# but each driver should decide what is relevant to expose the action methods,
 		# e.g. playwright page, 2fa code getters, sensitive_data wrappers, other context, etc.
 		return {
-			'context': None,  # Context is a TypeVar, so we can't validate type
+			'context': type(None),  # Context is a TypeVar, so we can't validate type
 			'browser_session': BrowserSession,
 			'browser': BrowserSession,  # legacy name
 			'browser_context': BrowserSession,  # legacy name
