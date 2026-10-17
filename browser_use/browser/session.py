@@ -1471,61 +1471,61 @@ class BrowserSession(BaseModel):
 		return new_filename
 
 	@staticmethod
-	def _convert_simple_xpath_to_css_selector(xpath: str) -> str:
-		"""Converts simple XPath expressions to CSS selectors."""
-		if not xpath:
-			return ''
+    def _convert_simple_xpath_to_css_selector(xpath: str) -> str:
+        """Converts simple XPath expressions to CSS selectors."""
+        if not xpath:
+            return ''
 
-		# Remove leading slash if present
-		xpath = xpath.lstrip('/')
+        # Remove leading slash if present
+        xpath = xpath.lstrip('/')
 
-		# Split into parts
-		parts = xpath.split('/')
-		css_parts = []
+        # Split into parts
+        parts = xpath.split('/')
+        css_parts = []
 
-		for part in parts:
-			if not part:
-				continue
+        for part in parts:
+            if not part:
+                continue
 
-			# Handle custom elements with colons by escaping them
-			if ':' in part and '[' not in part:
-				base_part = part.replace(':', r'\:')
-				css_parts.append(base_part)
-				continue
+            # Handle custom elements with colons by escaping them
+            if ':' in part and '[' not in part:
+                base_part = part.replace(':', r'\:')
+                css_parts.append(base_part)
+                continue
 
-			# Handle index notation [n]
-			if '[' in part:
-				base_part = part[: part.find('[')]
-				# Handle custom elements with colons in the base part
-				if ':' in base_part:
-					base_part = base_part.replace(':', r'\:')
-				index_part = part[part.find('[') :]
+            # Handle index notation [n]
+            if '[' in part:
+                base_part = part[: part.find('[')]
+                # Handle custom elements with colons in the base part
+                if ':' in base_part:
+                    base_part = base_part.replace(':', r'\:')
+                index_part = part[part.find('[') :]
 
-				# Handle multiple indices
-				indices = [i.strip('[]') for i in index_part.split(']')[:-1]]
+                # Handle multiple indices
+                indices = [i.strip('[]') for i in index_part.split(']')[:-1]]
 
-				for idx in indices:
-					try:
-						# Handle numeric indices
-						if idx.isdigit():
-							index = int(idx) - 1
-							base_part += f':nth-of-type({index + 1})'
-						# Handle last() function
-						elif idx == 'last()':
-							base_part += ':last-of-type'
-						# Handle position() functions
-						elif 'position()' in idx:
-							if '>1' in idx:
-								base_part += ':nth-of-type(n+2)'
-					except ValueError:
-						continue
+                for idx in indices:
+                    try:
+                        # Handle numeric indices
+                        if idx.isdigit():
+                            index = int(idx) - 1
+                            base_part += f':nth-of-type({index + 1})'
+                        # Handle last() function
+                        elif idx == 'last()':
+                            base_part += ':last-of-type'
+                        # Handle position() functions
+                        elif 'position()' in idx:
+                            if '>1' in idx:
+                                base_part += ':nth-of-type(n+2)'
+                    except ValueError:
+                        continue
 
-				css_parts.append(base_part)
-			else:
-				css_parts.append(part)
+                css_parts.append(base_part)
+            else:
+                css_parts.append(part)
 
-		base_selector = ' > '.join(css_parts)
-		return base_selector
+        base_selector = ' > '.join(css_parts)
+        return base_selector
 
 	@classmethod
 	@time_execution_sync('--enhanced_css_selector_for_element')
