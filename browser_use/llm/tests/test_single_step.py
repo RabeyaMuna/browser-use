@@ -116,7 +116,7 @@ async def test_single_step_parametrized(llm_class, model_name):
 		messages = agent.message_manager.get_messages()
 
 		# Test with simple question
-		response = await llm.ainvoke(messages, agent.AgentOutput)
+		response = await llm.ainvoke(messages)
 
 		# Basic assertions to ensure response is valid
 		assert response.completion is not None
@@ -158,7 +158,7 @@ async def test_single_step():
 
 			# Test with simple question
 			try:
-				response = await llm.ainvoke(messages, agent.AgentOutput)
+				response = await llm.ainvoke(messages)
 				logger.info(f'Response from {llm.provider}: {response.completion}')
 				logger.info(f'Actions: {str(response.completion.action)}')
 

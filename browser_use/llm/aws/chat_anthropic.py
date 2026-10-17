@@ -122,7 +122,10 @@ class ChatAnthropicBedrock(ChatAWSBedrock):
 			AsyncAnthropicBedrock: An instance of the AsyncAnthropicBedrock client.
 		"""
 		client_params = self._get_client_params()
-		return AsyncAnthropicBedrock(**client_params)
+		# Filter out parameters that AsyncAnthropicBedrock doesn't accept
+		allowed_params = ['aws_access_key', 'aws_secret_key', 'aws_session_token', 'aws_region', 'max_retries', 'default_headers', 'default_query']
+		filtered_params = {k: v for k, v in client_params.items() if k in allowed_params}
+		return AsyncAnthropicBedrock(**filtered_params)
 
 	@property
 	def name(self) -> str:
@@ -157,11 +160,12 @@ class ChatAnthropicBedrock(ChatAWSBedrock):
 		try:
 			if output_format is None:
 				# Normal completion without structured output
+				invoke_params = self._get_client_params_for_invoke()
 				response = await self.get_client().messages.create(
 					model=self.model,
 					messages=anthropic_messages,
 					system=system_prompt or NOT_GIVEN,
-					**self._get_client_params_for_invoke(),
+					**invoke_params,
 				)
 
 				usage = self._get_usage(response)
@@ -199,13 +203,14 @@ class ChatAnthropicBedrock(ChatAWSBedrock):
 				# Force the model to use this tool
 				tool_choice = ToolChoiceToolParam(type='tool', name=tool_name)
 
+				invoke_params = self._get_client_params_for_invoke()
 				response = await self.get_client().messages.create(
 					model=self.model,
 					messages=anthropic_messages,
 					tools=[tool],
 					system=system_prompt or NOT_GIVEN,
 					tool_choice=tool_choice,
-					**self._get_client_params_for_invoke(),
+					**invoke_params,
 				)
 
 				usage = self._get_usage(response)

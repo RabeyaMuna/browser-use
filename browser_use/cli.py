@@ -1047,6 +1047,7 @@ class BrowserUseApp(App):
 				# Clear the running flag
 				if self.agent:
 					self.agent.running = False  # type: ignore
+					delattr(self.agent, 'last_response_time')  # type: ignore
 
 				# No need to call update_info_panels() here as it's already updating via timer
 

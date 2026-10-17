@@ -75,10 +75,10 @@ class ChatAnthropic(BaseChatModel):
 
 		return client_params
 
-	def _get_client_params_for_invoke(self):
+	def _get_client_params_for_invoke(self) -> dict[str, Any]:
 		"""Prepare client parameters dictionary for invoke."""
 
-		client_params = {}
+		client_params: dict[str, Any] = {}
 
 		if self.temperature is not None:
 			client_params['temperature'] = self.temperature
