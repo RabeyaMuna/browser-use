@@ -135,12 +135,14 @@ class ChatOpenAI(BaseChatModel):
 		try:
 			if output_format is None:
 				# Return string response
-				response = await self.get_client().chat.completions.create(
-					model=self.model,
-					messages=openai_messages,
-					temperature=self.temperature,
-					reasoning_effort=self.reasoning_effort,
-				)
+				create_kwargs = {
+					'model': self.model,
+					'messages': openai_messages,
+					'temperature': self.temperature,
+				}
+				if self.reasoning_effort is not None:
+					create_kwargs['reasoning_effort'] = self.reasoning_effort
+				response = await self.get_client().chat.completions.create(**create_kwargs)
 
 				usage = self._get_usage(response)
 				return ChatInvokeCompletion(
@@ -156,13 +158,15 @@ class ChatOpenAI(BaseChatModel):
 				}
 
 				# Return structured response
-				response = await self.get_client().chat.completions.create(
-					model=self.model,
-					messages=openai_messages,
-					temperature=self.temperature,
-					reasoning_effort=self.reasoning_effort,
-					response_format=ResponseFormatJSONSchema(json_schema=response_format, type='json_schema'),
-				)
+				create_kwargs = {
+					'model': self.model,
+					'messages': openai_messages,
+					'temperature': self.temperature,
+					'response_format': ResponseFormatJSONSchema(json_schema=response_format, type='json_schema'),
+				}
+				if self.reasoning_effort is not None:
+					create_kwargs['reasoning_effort'] = self.reasoning_effort
+				response = await self.get_client().chat.completions.create(**create_kwargs)
 
 				if response.choices[0].message.content is None:
 					raise ModelProviderError(
