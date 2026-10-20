@@ -133,7 +133,7 @@ class ChatAnthropic(BaseChatModel):
 				response = await self.get_client().messages.create(
 					model=self.model,
 					messages=anthropic_messages,
-					system=system_prompt or NOT_GIVEN,
+					system=system_prompt if system_prompt else NOT_GIVEN,
 					**self._get_client_params_for_invoke(),
 				)
 
@@ -191,7 +191,14 @@ class ChatAnthropic(BaseChatModel):
 							return ChatInvokeCompletion(completion=output_format.model_validate(content_block.input), usage=usage)
 						except Exception as e:
 							# If validation fails, try to parse it as JSON first
-							if isinstance(content_block.input, str):
+							if isinstance(content_block.input, dict):
+								# Already a dict, validate directly
+								return ChatInvokeCompletion(
+									completion=output_format.model_validate(content_block.input),
+									usage=usage,
+								)
+							elif isinstance(content_block.input, str):
+								# Parse string as JSON
 								data = json.loads(content_block.input)
 								return ChatInvokeCompletion(
 									completion=output_format.model_validate(data),

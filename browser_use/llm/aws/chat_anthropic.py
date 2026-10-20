@@ -160,7 +160,7 @@ class ChatAnthropicBedrock(ChatAWSBedrock):
 				response = await self.get_client().messages.create(
 					model=self.model,
 					messages=anthropic_messages,
-					system=system_prompt or NOT_GIVEN,
+					system=system_prompt if system_prompt else NOT_GIVEN,
 					**self._get_client_params_for_invoke(),
 				)
 
@@ -203,7 +203,7 @@ class ChatAnthropicBedrock(ChatAWSBedrock):
 					model=self.model,
 					messages=anthropic_messages,
 					tools=[tool],
-					system=system_prompt or NOT_GIVEN,
+					system=system_prompt if system_prompt else NOT_GIVEN,
 					tool_choice=tool_choice,
 					**self._get_client_params_for_invoke(),
 				)
@@ -218,8 +218,11 @@ class ChatAnthropicBedrock(ChatAWSBedrock):
 							return ChatInvokeCompletion(completion=output_format.model_validate(content_block.input), usage=usage)
 						except Exception as e:
 							# If validation fails, try to parse it as JSON first
-							if isinstance(content_block.input, str):
-								data = json.loads(content_block.input)
+							if isinstance(content_block.input, (str, dict)):
+								if isinstance(content_block.input, str):
+									data = json.loads(content_block.input)
+								else:
+									data = content_block.input
 								return ChatInvokeCompletion(
 									completion=output_format.model_validate(data),
 									usage=usage,
