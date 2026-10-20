@@ -12,12 +12,15 @@ if sys.platform.startswith('win'):
 	except Exception as e:
 		logger.error(f'❌  Failed to set Windows event loop policy: {type(e).__name__}: {e}')
 
-from browser_use.agent.prompts import SystemPrompt
-from browser_use.agent.service import Agent
-from browser_use.agent.views import ActionModel, ActionResult, AgentHistoryList
-from browser_use.browser import Browser, BrowserConfig, BrowserContext, BrowserContextConfig, BrowserProfile, BrowserSession
-from browser_use.controller.service import Controller
-from browser_use.dom.service import DomService
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+	from browser_use.agent.prompts import SystemPrompt
+	from browser_use.agent.service import Agent
+	from browser_use.agent.views import ActionModel, ActionResult, AgentHistoryList
+	from browser_use.browser import Browser, BrowserConfig, BrowserContext, BrowserContextConfig, BrowserProfile, BrowserSession
+	from browser_use.controller.service import Controller
+	from browser_use.dom.service import DomService
 
 __all__ = [
 	'Agent',
