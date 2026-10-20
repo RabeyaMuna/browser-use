@@ -577,25 +577,25 @@ class BrowserSession(BaseModel):
 		# log the viewport settings to terminal
 		viewport = self.browser_profile.viewport
 		logger.debug(
-			'📐 Setting up viewport: '
-			+ f'headless={self.browser_profile.headless} '
+			"📐 Setting up viewport: "
+			+ f"headless={self.browser_profile.headless} "
 			+ (
 				f'window={self.browser_profile.window_size["width"]}x{self.browser_profile.window_size["height"]}px '
 				if self.browser_profile.window_size
-				else '(no window) '
+				else "(no window) "
 			)
 			+ (
 				f'screen={self.browser_profile.screen["width"]}x{self.browser_profile.screen["height"]}px '
 				if self.browser_profile.screen
-				else ''
+				else ""
 			)
-			+ (f'viewport={viewport["width"]}x{viewport["height"]}px ' if viewport else '(no viewport) ')
-			+ f'device_scale_factor={self.browser_profile.device_scale_factor or 1.0} '
-			+ f'is_mobile={self.browser_profile.is_mobile} '
-			+ (f'color_scheme={self.browser_profile.color_scheme.value} ' if self.browser_profile.color_scheme else '')
-			+ (f'locale={self.browser_profile.locale} ' if self.browser_profile.locale else '')
-			+ (f'timezone_id={self.browser_profile.timezone_id} ' if self.browser_profile.timezone_id else '')
-			+ (f'geolocation={self.browser_profile.geolocation} ' if self.browser_profile.geolocation else '')
+			+ (f'viewport={viewport["width"]}x{viewport["height"]}px ' if viewport else "(no viewport) ")
+			+ f"device_scale_factor={self.browser_profile.device_scale_factor or 1.0} "
+			+ f"is_mobile={self.browser_profile.is_mobile} "
+			+ (f"color_scheme={self.browser_profile.color_scheme.value} " if self.browser_profile.color_scheme else "")
+			+ (f"locale={self.browser_profile.locale} " if self.browser_profile.locale else "")
+			+ (f"timezone_id={self.browser_profile.timezone_id} " if self.browser_profile.timezone_id else "")
+			+ (f"geolocation={self.browser_profile.geolocation} " if self.browser_profile.geolocation else "")
 		)
 
 		# if we have any viewport settings in the profile, make sure to apply them to the entire browser_context as defaults
@@ -604,7 +604,7 @@ class BrowserSession(BaseModel):
 				await self.browser_context.grant_permissions(self.browser_profile.permissions)
 			except Exception as e:
 				logger.warning(
-					f'⚠️ Failed to grant browser permissions {self.browser_profile.permissions}: {type(e).__name__}: {e}'
+					f"⚠️ Failed to grant browser permissions {self.browser_profile.permissions}: {type(e).__name__}: {e}"
 				)
 		try:
 			if self.browser_profile.default_timeout:
@@ -613,21 +613,21 @@ class BrowserSession(BaseModel):
 				await self.browser_context.set_default_navigation_timeout(self.browser_profile.default_navigation_timeout)
 		except Exception as e:
 			logger.warning(
-				f'⚠️ Failed to set playwright timeout settings '
-				f'calls={self.browser_profile.default_timeout} '
-				f'nav={self.browser_profile.default_navigation_timeout}: {type(e).__name__}: {e}'
+				f"⚠️ Failed to set playwright timeout settings "
+				f"calls={self.browser_profile.default_timeout} "
+				f"nav={self.browser_profile.default_navigation_timeout}: {type(e).__name__}: {e}"
 			)
 		try:
 			if self.browser_profile.extra_http_headers:
 				await self.browser_context.set_extra_http_headers(self.browser_profile.extra_http_headers)
 		except Exception as e:
-			logger.warning(f'⚠️ Failed to setup playwright extra_http_headers: {type(e).__name__}: {e}')
+			logger.warning(f"⚠️ Failed to setup playwright extra_http_headers: {type(e).__name__}: {e}")
 
 		try:
 			if self.browser_profile.geolocation:
 				await self.browser_context.set_geolocation(self.browser_profile.geolocation)
 		except Exception as e:
-			logger.warning(f'⚠️ Failed to update browser geolocation {self.browser_profile.geolocation}: {type(e).__name__}: {e}')
+			logger.warning(f"⚠️ Failed to update browser geolocation {self.browser_profile.geolocation}: {type(e).__name__}: {e}")
 
 		# if self.storage_state:
 		#   TODO: implement applying self.stroage_state to an existing browser_context
@@ -639,7 +639,7 @@ class BrowserSession(BaseModel):
 				await page.set_viewport_size(viewport)
 
 			# show browser-use dvd screensaver-style bouncing loading animation on any about:blank pages
-			if page.url == 'about:blank':
+			if page.url == "about:blank":
 				await self._show_dvd_screensaver_loading_animation(page)
 
 	def _set_browser_keep_alive(self, keep_alive: bool | None) -> None:
@@ -2062,7 +2062,8 @@ class BrowserSession(BaseModel):
 		Injects a DVD screensaver-style bouncing logo loading animation overlay into the given Playwright Page.
 		This is used to visually indicate that the browser is setting up or waiting.
 		"""
-		await page.evaluate("""() => {
+		await page.evaluate(
+			"""() => {
 			document.title = 'Setting up...';
 
 			// Create the main overlay
@@ -2103,48 +2104,4 @@ class BrowserSession(BaseModel):
 
 			function animate() {
 				const imgWidth = img.offsetWidth || 300;
-				const imgHeight = img.offsetHeight || 300;
-				x += dx;
-				y += dy;
-
-				if (x <= 0) {
-					x = 0;
-					dx = Math.abs(dx);
-				} else if (x + imgWidth >= window.innerWidth) {
-					x = window.innerWidth - imgWidth;
-					dx = -Math.abs(dx);
-				}
-				if (y <= 0) {
-					y = 0;
-					dy = Math.abs(dy);
-				} else if (y + imgHeight >= window.innerHeight) {
-					y = window.innerHeight - imgHeight;
-					dy = -Math.abs(dy);
-				}
-
-				img.style.left = `${x}px`;
-				img.style.top = `${y}px`;
-
-				requestAnimationFrame(animate);
-			}
-			animate();
-
-			// Responsive: update bounds on resize
-			window.addEventListener('resize', () => {
-				x = Math.min(x, window.innerWidth - img.offsetWidth);
-				y = Math.min(y, window.innerHeight - img.offsetHeight);
-			});
-
-			// Add a little CSS for smoothness
-			const style = document.createElement('style');
-			style.innerHTML = `
-				#pretty-loading-animation {
-					/*backdrop-filter: blur(2px) brightness(0.9);*/
-				}
-				#pretty-loading-animation img {
-					user-select: none;
-					pointer-events: none;
-				}
-			`;
-			document.head.appendChild(style);
-		}""")
+				const imgHeight
