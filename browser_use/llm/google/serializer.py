@@ -14,7 +14,7 @@ class GoogleMessageSerializer:
 	"""Serializer for converting messages to Google Gemini format."""
 
 	@staticmethod
-	def serialize_messages(messages: list[BaseMessage], include_system_in_user: bool = False) -> tuple[ContentListUnion, str | None]:
+	def serialize_messages(messages: list[BaseMessage], include_system_in_user: bool = False) -> tuple[list[Content], str | None]:
 		"""
 		Convert a list of BaseMessages to Google format, extracting system message.
 
@@ -34,7 +34,7 @@ class GoogleMessageSerializer:
 
 		messages = [m.model_copy(deep=True) for m in messages]
 
-		formatted_messages: ContentListUnion = []
+		formatted_messages: list[Content] = []
 		system_message: str | None = None
 		system_parts: list[str] = []
 
