@@ -576,7 +576,7 @@ async def judge_with_repeat_and_average(
 		task_coro = judge_with_retry(
 			task, complete_history, final_result, last_message, screenshot_paths, model, max_retries, max_images
 		)
-		judge_tasks.append(task_coro)
+		judge_tasks.append(asyncio.create_task(task_coro))
 
 	# Run all judge evaluations in parallel
 	logger.info(f'Starting {len(judge_tasks)} parallel judge evaluations...')
