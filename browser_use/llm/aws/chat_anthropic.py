@@ -4,11 +4,11 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, TypeVar, overload
 
 from anthropic import (
-	NOT_GIVEN,
-	APIConnectionError,
-	APIStatusError,
-	AsyncAnthropicBedrock,
-	RateLimitError,
+    NOT_GIVEN,
+    APIConnectionError,
+    APIStatusError,
+    AsyncAnthropicBedrock,
+    RateLimitError,
 )
 from anthropic.types import CacheControlEphemeralParam, Message, ToolParam
 from anthropic.types.text_block import TextBlock
@@ -163,7 +163,7 @@ class ChatAnthropicBedrock(ChatAWSBedrock):
 				response = await self.get_client().messages.create(
 					model=self.model,
 					messages=anthropic_messages,
-					system=system_prompt or NOT_GIVEN,
+					system=system_prompt if system_prompt else NOT_GIVEN,
 					**self._get_client_params_for_invoke(),
 				)
 
@@ -206,7 +206,7 @@ class ChatAnthropicBedrock(ChatAWSBedrock):
 					model=self.model,
 					messages=anthropic_messages,
 					tools=[tool],
-					system=system_prompt or NOT_GIVEN,
+					system=system_prompt if system_prompt else NOT_GIVEN,
 					tool_choice=tool_choice,
 					**self._get_client_params_for_invoke(),
 				)
@@ -218,7 +218,7 @@ class ChatAnthropicBedrock(ChatAWSBedrock):
 					if hasattr(content_block, 'type') and content_block.type == 'tool_use':
 						# Parse the tool input as the structured output
 						try:
-							return ChatInvokeCompletion(completion=output_format.model_validate(content_block.input), usage=usage)
+							return ChatInvokeCompletion(completion=output_format.model_validate_json(content_block.input), usage=usage)
 						except Exception as e:
 							# If validation fails, try to parse it as JSON first
 							if isinstance(content_block.input, str):
