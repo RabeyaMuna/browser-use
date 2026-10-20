@@ -160,10 +160,11 @@ class ChatAnthropicBedrock(ChatAWSBedrock):
 		try:
 			if output_format is None:
 				# Normal completion without structured output
+				system_param = system_prompt if system_prompt is not None else NOT_GIVEN
 				response = await self.get_client().messages.create(
 					model=self.model,
 					messages=anthropic_messages,
-					system=system_prompt or NOT_GIVEN,
+					system=system_param,
 					**self._get_client_params_for_invoke(),
 				)
 
@@ -202,11 +203,12 @@ class ChatAnthropicBedrock(ChatAWSBedrock):
 				# Force the model to use this tool
 				tool_choice = ToolChoiceToolParam(type='tool', name=tool_name)
 
+				system_param = system_prompt if system_prompt is not None else NOT_GIVEN
 				response = await self.get_client().messages.create(
 					model=self.model,
 					messages=anthropic_messages,
 					tools=[tool],
-					system=system_prompt or NOT_GIVEN,
+					system=system_param,
 					tool_choice=tool_choice,
 					**self._get_client_params_for_invoke(),
 				)
@@ -218,7 +220,15 @@ class ChatAnthropicBedrock(ChatAWSBedrock):
 					if hasattr(content_block, 'type') and content_block.type == 'tool_use':
 						# Parse the tool input as the structured output
 						try:
-							return ChatInvokeCompletion(completion=output_format.model_validate(content_block.input), usage=usage)
+							# Ensure content_block.input is a dict for model_validate
+							if isinstance(content_block.input, dict):
+								input_data = content_block.input
+							elif isinstance(content_block.input, str):
+								input_data = json.loads(content_block.input)
+							else:
+								# Try to convert to dict via JSON serialization
+								input_data = json.loads(json.dumps(content_block.input, default=str))
+							return ChatInvokeCompletion(completion=output_format.model_validate(input_data), usage=usage)
 						except Exception as e:
 							# If validation fails, try to parse it as JSON first
 							if isinstance(content_block.input, str):
@@ -227,7 +237,15 @@ class ChatAnthropicBedrock(ChatAWSBedrock):
 									completion=output_format.model_validate(data),
 									usage=usage,
 								)
-							raise e
+							# If not a string, try to convert to dict
+							try:
+								if isinstance(content_block.input, dict):
+									data = content_block.input
+							else:
+								data = json.loads(json.dumps(content_block.input, default=str))
+							return ChatInvokeCompletion(completion=output_format.model_validate(data), usage=usage)
+							except Exception:
+								raise e
 
 				# If no tool use block found, raise an error
 				raise ValueError('Expected tool use in response but none found')

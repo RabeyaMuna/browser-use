@@ -43,7 +43,7 @@ class StorageStateWatchdog(BaseWatchdog):
 
 	# Private state
 	_monitoring_task: asyncio.Task | None = PrivateAttr(default=None)
-	_last_cookie_state: list[Cookie] = PrivateAttr(default_factory=list)
+	_last_cookie_state: list[dict] = PrivateAttr(default_factory=list)
 	_save_lock: asyncio.Lock = PrivateAttr(default_factory=asyncio.Lock)
 
 	async def on_BrowserStartedEvent(self, event: BrowserStartedEvent) -> None:
@@ -160,7 +160,7 @@ class StorageStateWatchdog(BaseWatchdog):
 		try:
 			current_cookies = await self.browser_session._browser_context.cookies()
 
-			# Convert to comparable format, using .get() for optional fields
+			# Convert to comparable format, using dictionary access for optional fields
 			current_cookie_set = {
 				(c.get('name', ''), c.get('domain', ''), c.get('path', '')): c.get('value', '') for c in current_cookies
 			}
@@ -327,7 +327,7 @@ class StorageStateWatchdog(BaseWatchdog):
 			logger.error(f'[StorageStateWatchdog] Failed to get cookies: {e}')
 			return []
 
-	async def add_cookies(self, cookies: list[Cookie]) -> None:
+	async def add_cookies(self, cookies: list[dict]) -> None:
 		"""Add cookies to browser context."""
 		if not self.browser_session._browser_context:
 			logger.warning('[StorageStateWatchdog] No browser context available for adding cookies')

@@ -72,15 +72,15 @@ class ChatAnthropic(BaseChatModel):
 		# Create client_params dict with non-None values and non-NotGiven values
 		client_params = {}
 		for k, v in base_params.items():
-			if v is not None and v is not NotGiven():
+			if v is not None and v is not NOT_GIVEN:
 				client_params[k] = v
 
 		return client_params
 
-	def _get_client_params_for_invoke(self):
+	def _get_client_params_for_invoke(self) -> dict[str, Any]:
 		"""Prepare client parameters dictionary for invoke."""
 
-		client_params = {}
+		client_params: dict[str, Any] = {}
 
 		if self.temperature is not None:
 			client_params['temperature'] = self.temperature
