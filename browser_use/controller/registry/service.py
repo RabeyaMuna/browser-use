@@ -52,7 +52,7 @@ class Registry(Generic[Context]):
 			'browser_context': BrowserSession,  # legacy name
 			'page': Page,
 			'page_extraction_llm': BaseChatModel,
-			'available_file_paths': list,
+			'available_file_paths': list[str],
 			'has_sensitive_data': bool,
 			'file_system': FileSystem,
 		}
@@ -270,7 +270,7 @@ class Registry(Generic[Context]):
 		return create_model(
 			f'{function.__name__}_parameters',
 			__base__=ActionModel,
-			**params,  # type: ignore
+			**params,
 		)
 
 	def action(

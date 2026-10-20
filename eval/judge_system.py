@@ -536,7 +536,11 @@ def parse_judge_response(result_dict: dict, task: str) -> JudgeResult:
 		if 'task_categories' in result_dict:
 			for cat in result_dict['task_categories']:
 				try:
-					task_categories.append(TaskCategory(cat))
+					# Ensure cat is a string before constructing TaskCategory
+					if isinstance(cat, str):
+						task_categories.append(TaskCategory(cat))
+					else:
+						logger.warning(f'Non-string task category: {cat}')
 				except ValueError:
 					logger.warning(f'Unknown task category: {cat}')
 
@@ -545,7 +549,11 @@ def parse_judge_response(result_dict: dict, task: str) -> JudgeResult:
 		if 'error_categories' in result_dict:
 			for err in result_dict['error_categories']:
 				try:
-					error_categories.append(ErrorCategory(err))
+					# Ensure err is a string before constructing ErrorCategory
+					if isinstance(err, str):
+						error_categories.append(ErrorCategory(err))
+					else:
+						logger.warning(f'Non-string error category: {err}')
 				except ValueError:
 					logger.warning(f'Unknown error category: {err}')
 
@@ -734,8 +742,8 @@ async def evaluate_task_with_comprehensive_judge(task_folder: Path, model: BaseC
 			max_images=max_images,
 		)
 
-		# Convert to dict for storage
-		judge_dict = asdict(judge_result)
+		# Convert to dict for storage using a custom serialization method
+		judge_dict = _serialize_judge_result(judge_result)
 
 		# Save back to result file using async wrapper
 		result_data['comprehensive_judge_evaluation'] = judge_dict
