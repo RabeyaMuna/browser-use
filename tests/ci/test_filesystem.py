@@ -27,8 +27,8 @@ class TestBaseFile:
 		assert md_file.content == '# Hello World'
 		assert md_file.extension == 'md'
 		assert md_file.full_name == 'test.md'
-		assert md_file.get_size == 13
-		assert md_file.get_line_count == 1
+		assert md_file.get_size() == 13
+		assert md_file.get_line_count() == 1
 
 	def test_txt_file_creation(self):
 		"""Test TxtFile creation and basic properties."""
@@ -38,8 +38,8 @@ class TestBaseFile:
 		assert txt_file.content == 'Hello\nWorld'
 		assert txt_file.extension == 'txt'
 		assert txt_file.full_name == 'notes.txt'
-		assert txt_file.get_size == 11
-		assert txt_file.get_line_count == 2
+		assert txt_file.get_size() == 11
+		assert txt_file.get_line_count() == 2
 
 	def test_file_content_operations(self):
 		"""Test content update and append operations."""
@@ -47,17 +47,17 @@ class TestBaseFile:
 
 		# Initial content
 		assert file_obj.content == ''
-		assert file_obj.get_size == 0
+		assert file_obj.get_size() == 0
 
 		# Write content
 		file_obj.write_file_content('First line')
 		assert file_obj.content == 'First line'
-		assert file_obj.get_size == 10
+		assert file_obj.get_size() == 10
 
 		# Append content
 		file_obj.append_file_content('\nSecond line')
 		assert file_obj.content == 'First line\nSecond line'
-		assert file_obj.get_line_count == 2
+		assert file_obj.get_line_count() == 2
 
 		# Update content
 		file_obj.update_content('New content')
@@ -516,6 +516,7 @@ class TestFileSystemEdgeCases:
 
 			# Test with invalid extension
 			result = await fs.write_file('test.invalid', 'content')
+			assert result is not None
 			assert result == INVALID_FILENAME_ERROR_MESSAGE
 
 			fs.nuke()
@@ -617,6 +618,7 @@ class TestFileSystemIntegration:
 
 			# Verify all operations succeeded
 			for result in results:
+				assert result is not None
 				assert 'successfully' in result
 
 			# Verify all files were created

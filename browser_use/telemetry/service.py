@@ -49,6 +49,7 @@ class ProductTelemetry:
 
 		if telemetry_disabled:
 			self._posthog_client = None
+			logger.debug('Telemetry disabled')
 		else:
 			logger.info(
 				'Anonymized telemetry enabled. See https://docs.browser-use.com/development/telemetry for more information.'
@@ -64,9 +65,6 @@ class ProductTelemetry:
 			if not self.debug_logging:
 				posthog_logger = logging.getLogger('posthog')
 				posthog_logger.disabled = True
-
-		if self._posthog_client is None:
-			logger.debug('Telemetry disabled')
 
 	def capture(self, event: BaseTelemetryEvent) -> None:
 		if self._posthog_client is None:
