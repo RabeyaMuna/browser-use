@@ -157,10 +157,18 @@ class ChatAnthropicBedrock(ChatAWSBedrock):
 		try:
 			if output_format is None:
 				# Normal completion without structured output
+				# Convert system_prompt to string if it's a list
+				system_param = NOT_GIVEN
+				if system_prompt:
+					if isinstance(system_prompt, list):
+						# Extract text from TextBlockParam objects
+						system_param = ' '.join([block.text for block in system_prompt if hasattr(block, 'text')])
+					else:
+						system_param = system_prompt
 				response = await self.get_client().messages.create(
 					model=self.model,
 					messages=anthropic_messages,
-					system=system_prompt or NOT_GIVEN,
+					system=system_param,
 					**self._get_client_params_for_invoke(),
 				)
 
@@ -199,11 +207,19 @@ class ChatAnthropicBedrock(ChatAWSBedrock):
 				# Force the model to use this tool
 				tool_choice = ToolChoiceToolParam(type='tool', name=tool_name)
 
+				# Convert system_prompt to string if it's a list
+				system_param = NOT_GIVEN
+				if system_prompt:
+					if isinstance(system_prompt, list):
+						# Extract text from TextBlockParam objects
+						system_param = ' '.join([block.text for block in system_prompt if hasattr(block, 'text')])
+					else:
+						system_param = system_prompt
 				response = await self.get_client().messages.create(
 					model=self.model,
 					messages=anthropic_messages,
 					tools=[tool],
-					system=system_prompt or NOT_GIVEN,
+					system=system_param,
 					tool_choice=tool_choice,
 					**self._get_client_params_for_invoke(),
 				)
@@ -215,7 +231,14 @@ class ChatAnthropicBedrock(ChatAWSBedrock):
 					if hasattr(content_block, 'type') and content_block.type == 'tool_use':
 						# Parse the tool input as the structured output
 						try:
+							# content_block.input should be a dict for tool_use blocks
+						if hasattr(content_block, 'input') and isinstance(content_block.input, dict):
 							return ChatInvokeCompletion(completion=output_format.model_validate(content_block.input), usage=usage)
+						else:
+							# Fallback to string parsing if not a dict
+							input_str = str(content_block.input)
+							data = json.loads(input_str)
+							return ChatInvokeCompletion(completion=output_format.model_validate(data), usage=usage)
 						except Exception as e:
 							# If validation fails, try to parse it as JSON first
 							if isinstance(content_block.input, str):

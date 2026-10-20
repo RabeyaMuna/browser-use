@@ -130,10 +130,17 @@ class ChatAnthropic(BaseChatModel):
 		try:
 			if output_format is None:
 				# Normal completion without structured output
+				# Ensure system_prompt is a string or NOT_GIVEN
+				system_param = NOT_GIVEN
+				if isinstance(system_prompt, str):
+					system_param = system_prompt
+				elif isinstance(system_prompt, list):
+					# If it's a list of TextBlockParam, convert to a single string
+					system_param = ' '.join([block.text for block in system_prompt if hasattr(block, 'text')])
 				response = await self.get_client().messages.create(
 					model=self.model,
 					messages=anthropic_messages,
-					system=system_prompt or NOT_GIVEN,
+					system=system_param,
 					**self._get_client_params_for_invoke(),
 				)
 
@@ -188,7 +195,19 @@ class ChatAnthropic(BaseChatModel):
 					if hasattr(content_block, 'type') and content_block.type == 'tool_use':
 						# Parse the tool input as the structured output
 						try:
-							return ChatInvokeCompletion(completion=output_format.model_validate(content_block.input), usage=usage)
+							# content_block.input should be a dict for tool_use blocks; ensure it's a dict
+						input_data = content_block.input
+						if not isinstance(input_data, dict):
+							# If it's not a dict, try to parse as JSON string
+							if isinstance(input_data, str):
+								input_data = json.loads(input_data)
+							else:
+								# Fallback: convert to dict via string representation
+								try:
+									input_data = json.loads(str(input_data))
+								except json.JSONDecodeError:
+									raise ValueError(f'Cannot parse tool input as JSON: {input_data}')
+						return ChatInvokeCompletion(completion=output_format.model_validate(input_data), usage=usage)
 						except Exception as e:
 							# If validation fails, try to parse it as JSON first
 							if isinstance(content_block.input, str):
