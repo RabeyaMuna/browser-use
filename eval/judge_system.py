@@ -22,6 +22,7 @@ from browser_use.llm.messages import (
 	ImageURL,
 	SystemMessage,
 	UserMessage,
+	AssistantMessage,
 )
 
 logger = logging.getLogger(__name__)
@@ -431,7 +432,7 @@ Evaluate this agent execution given the criteria and respond with the exact JSON
 	try:
 		response = await model.ainvoke(messages, output_format=JudgeResult)
 		logger.info(f'Judge response: {response}')
-		return response.completion
+		return response
 
 	except Exception as e:
 		logger.error(f'Judge evaluation failed: {e}')

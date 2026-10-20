@@ -127,13 +127,20 @@ class ChatAnthropic(BaseChatModel):
 	) -> ChatInvokeCompletion[T] | ChatInvokeCompletion[str]:
 		anthropic_messages, system_prompt = AnthropicMessageSerializer.serialize_messages(messages)
 
+		# Ensure system_prompt is a string or NOT_GIVEN
+		if isinstance(system_prompt, list):
+			# Join list of TextBlockParam into a single string
+			system_prompt = '\n'.join([block.text if hasattr(block, 'text') else str(block) for block in system_prompt])
+		elif system_prompt is None:
+			system_prompt = NOT_GIVEN
+
 		try:
 			if output_format is None:
 				# Normal completion without structured output
 				response = await self.get_client().messages.create(
 					model=self.model,
 					messages=anthropic_messages,
-					system=system_prompt or NOT_GIVEN,
+					system=system_prompt,
 					**self._get_client_params_for_invoke(),
 				)
 
@@ -176,7 +183,7 @@ class ChatAnthropic(BaseChatModel):
 					model=self.model,
 					messages=anthropic_messages,
 					tools=[tool],
-					system=system_prompt or NOT_GIVEN,
+					system=system_prompt,
 					tool_choice=tool_choice,
 					**self._get_client_params_for_invoke(),
 				)

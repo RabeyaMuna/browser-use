@@ -14,7 +14,7 @@ class GoogleMessageSerializer:
 	"""Serializer for converting messages to Google Gemini format."""
 
 	@staticmethod
-	def serialize_messages(messages: list[BaseMessage]) -> tuple[ContentListUnion, str | None]:
+	def serialize_messages(messages: list[BaseMessage]) -> tuple[list[Content], str | None]:
 		"""
 		Convert a list of BaseMessages to Google format, extracting system message.
 
@@ -33,14 +33,12 @@ class GoogleMessageSerializer:
 
 		messages = [m.model_copy(deep=True) for m in messages]
 
-		formatted_messages: ContentListUnion = []
+		formatted_messages: list[Content] = []
 		system_message: str | None = None
 
 		for message in messages:
-			role = message.role if hasattr(message, 'role') else None
-
-			# Handle system/developer messages
-			if isinstance(message, SystemMessage) or role in ['system', 'developer']:
+			# Determine the role for non-system messages
+			if isinstance(message, SystemMessage):
 				# Extract system message content as string
 				if isinstance(message.content, str):
 					system_message = message.content
@@ -52,9 +50,7 @@ class GoogleMessageSerializer:
 							parts.append(part.text)
 					system_message = '\n'.join(parts)
 				continue
-
-			# Determine the role for non-system messages
-			if isinstance(message, UserMessage):
+			elif isinstance(message, UserMessage):
 				role = 'user'
 			elif isinstance(message, AssistantMessage):
 				role = 'model'
