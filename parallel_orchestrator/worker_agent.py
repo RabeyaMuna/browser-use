@@ -27,7 +27,7 @@ class WorkerAgent:
 		self.min_delay_between_calls = 1  # Reduced delay for better parallelism
 		self.shared_memory = shared_memory
 
-	async def initialize(self):
+	async def initialize(self) -> None:
 		"""Initialize the browser session and controller."""
 		logger.info(f'Worker {self.worker_id}: Initializing browser session...')
 		try:
