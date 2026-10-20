@@ -157,10 +157,11 @@ class ChatAnthropicBedrock(ChatAWSBedrock):
 		try:
 			if output_format is None:
 				# Normal completion without structured output
+				system_param = system_prompt if system_prompt is not None else NOT_GIVEN
 				response = await self.get_client().messages.create(
 					model=self.model,
 					messages=anthropic_messages,
-					system=system_prompt or NOT_GIVEN,
+					system=system_param,
 					**self._get_client_params_for_invoke(),
 				)
 
@@ -168,7 +169,7 @@ class ChatAnthropicBedrock(ChatAWSBedrock):
 
 				# Extract text from the first content block
 				first_content = response.content[0]
-				if isinstance(first_content, TextBlock):
+				if hasattr(first_content, 'type') and first_content.type == 'text':
 					response_text = first_content.text
 				else:
 					# If it's not a text block, convert to string
@@ -199,11 +200,12 @@ class ChatAnthropicBedrock(ChatAWSBedrock):
 				# Force the model to use this tool
 				tool_choice = ToolChoiceToolParam(type='tool', name=tool_name)
 
+				system_param = system_prompt if system_prompt is not None else NOT_GIVEN
 				response = await self.get_client().messages.create(
 					model=self.model,
 					messages=anthropic_messages,
 					tools=[tool],
-					system=system_prompt or NOT_GIVEN,
+					system=system_param,
 					tool_choice=tool_choice,
 					**self._get_client_params_for_invoke(),
 				)

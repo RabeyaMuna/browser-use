@@ -130,12 +130,14 @@ class ChatAnthropic(BaseChatModel):
 		try:
 			if output_format is None:
 				# Normal completion without structured output
-				response = await self.get_client().messages.create(
-					model=self.model,
-					messages=anthropic_messages,
-					system=system_prompt or NOT_GIVEN,
+				create_kwargs = {
+					'model': self.model,
+					'messages': anthropic_messages,
 					**self._get_client_params_for_invoke(),
-				)
+				}
+				if system_prompt is not None:
+					create_kwargs['system'] = system_prompt
+				response = await self.get_client().messages.create(**create_kwargs)
 
 				usage = self._get_usage(response)
 
@@ -172,14 +174,16 @@ class ChatAnthropic(BaseChatModel):
 				# Force the model to use this tool
 				tool_choice = ToolChoiceToolParam(type='tool', name=tool_name)
 
-				response = await self.get_client().messages.create(
-					model=self.model,
-					messages=anthropic_messages,
-					tools=[tool],
-					system=system_prompt or NOT_GIVEN,
-					tool_choice=tool_choice,
+				create_kwargs = {
+					'model': self.model,
+					'messages': anthropic_messages,
+					'tools': [tool],
+					'tool_choice': tool_choice,
 					**self._get_client_params_for_invoke(),
-				)
+				}
+				if system_prompt is not None:
+					create_kwargs['system'] = system_prompt
+				response = await self.get_client().messages.create(**create_kwargs)
 
 				usage = self._get_usage(response)
 
@@ -195,6 +199,11 @@ class ChatAnthropic(BaseChatModel):
 								data = json.loads(content_block.input)
 								return ChatInvokeCompletion(
 									completion=output_format.model_validate(data),
+									usage=usage,
+								)
+							elif isinstance(content_block.input, dict):
+								return ChatInvokeCompletion(
+									completion=output_format.model_validate(content_block.input),
 									usage=usage,
 								)
 							raise e
