@@ -130,10 +130,11 @@ class ChatAnthropic(BaseChatModel):
 		try:
 			if output_format is None:
 				# Normal completion without structured output
+				system_arg = system_prompt if system_prompt is not None else NOT_GIVEN
 				response = await self.get_client().messages.create(
 					model=self.model,
 					messages=anthropic_messages,
-					system=system_prompt or NOT_GIVEN,
+					system=system_arg,
 					**self._get_client_params_for_invoke(),
 				)
 
@@ -172,11 +173,12 @@ class ChatAnthropic(BaseChatModel):
 				# Force the model to use this tool
 				tool_choice = ToolChoiceToolParam(type='tool', name=tool_name)
 
+				system_arg = system_prompt if system_prompt is not None else NOT_GIVEN
 				response = await self.get_client().messages.create(
 					model=self.model,
 					messages=anthropic_messages,
 					tools=[tool],
-					system=system_prompt or NOT_GIVEN,
+					system=system_arg,
 					tool_choice=tool_choice,
 					**self._get_client_params_for_invoke(),
 				)
