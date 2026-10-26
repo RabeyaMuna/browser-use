@@ -1,4 +1,5 @@
 import asyncio
+import base64
 import logging
 
 import pytest
@@ -22,17 +23,30 @@ logger = logging.getLogger('tab_tests')
 logger.setLevel(logging.DEBUG)
 
 
+def _test_page_url(page_id: str) -> str:
+	html = f'<html><head><title>Example {page_id}</title></head><body>{page_id}</body></html>'
+	encoded_html = base64.b64encode(html.encode()).decode()
+	return f'data:text/html;base64,{encoded_html}#{page_id}'
+
+
+PAGE1_URL = _test_page_url('page1')
+PAGE2_URL = _test_page_url('page2')
+PAGE3_URL = _test_page_url('page3')
+PAGE4_URL = _test_page_url('page4')
+BING_URL = _test_page_url('bing')
+
+
 class TestTabManagement:
 	"""Tests for the tab management system with separate agent_current_page and human_current_page references."""
 
-	@pytest.fixture(scope='module')
+	@pytest.fixture
 	def event_loop(self):
 		"""Create and provide an event loop for async tests."""
 		loop = asyncio.get_event_loop_policy().new_event_loop()
 		yield loop
 		loop.close()
 
-	@pytest.fixture(scope='module')
+	@pytest.fixture
 	async def browser(self, event_loop):
 		"""Create and provide a Browser instance with security disabled."""
 		browser_instance = Browser(
@@ -57,13 +71,13 @@ class TestTabManagement:
 			await page.close()
 
 		# Create an initial tab and wait for it to load completely
-		await context.create_new_tab('https://example.com/page1')
+		await context.create_new_tab(PAGE1_URL)
 		await asyncio.sleep(1)  # Wait for the tab to fully initialize
 
 		# Verify that agent_current_page and human_current_page are properly set
 		assert context.agent_current_page is not None
 		assert context.human_current_page is not None
-		assert 'example.com' in context.agent_current_page.url
+		assert '#page1' in context.agent_current_page.url
 
 		yield context
 		await context.close()
@@ -106,7 +120,7 @@ class TestTabManagement:
 				browser_context.agent_current_page = session.context.pages[0]
 			else:
 				# Create a tab with a real website
-				await browser_context.create_new_tab('https://example.com/page1')
+				await browser_context.create_new_tab(PAGE1_URL)
 				await asyncio.sleep(1)  # Wait longer for tab to initialize
 
 		if not browser_context.human_current_page or browser_context.human_current_page not in session.context.pages:
@@ -151,7 +165,7 @@ class TestTabManagement:
 		initial_agent_tab = browser_context.agent_current_page
 
 		# Open a new tab directly via BrowserContext
-		await browser_context.create_new_tab('https://example.com/page2')
+		await browser_context.create_new_tab(PAGE2_URL)
 
 		# Give time for events to process
 		await asyncio.sleep(1)
@@ -165,7 +179,7 @@ class TestTabManagement:
 		assert browser_context.agent_current_page is not None
 		assert browser_context.human_current_page == browser_context.agent_current_page
 		assert initial_agent_tab != browser_context.agent_current_page
-		assert 'example.com/page2' in browser_context.agent_current_page.url
+		assert '#page2' in browser_context.agent_current_page.url
 
 	@pytest.mark.asyncio
 	async def test_switch_tab_updates_both_references(self, browser_context):
@@ -174,11 +188,11 @@ class TestTabManagement:
 		await self._ensure_synchronized_state(browser_context)
 
 		# Create a new tab in addition to existing one
-		await browser_context.create_new_tab('https://example.com/page2')
+		await browser_context.create_new_tab(PAGE2_URL)
 		await asyncio.sleep(1)
 
 		# Verify we now have the second tab active
-		assert 'example.com/page2' in browser_context.agent_current_page.url
+		assert '#page2' in browser_context.agent_current_page.url
 
 		# Switch to the first tab
 		session = await browser_context.get_session()
@@ -191,7 +205,7 @@ class TestTabManagement:
 		assert browser_context.agent_current_page is not None
 		assert browser_context.human_current_page == browser_context.agent_current_page
 		assert browser_context.agent_current_page == first_tab
-		assert 'example.com/page1' in browser_context.agent_current_page.url
+		assert '#page1' in browser_context.agent_current_page.url
 
 		# Verify the underlying page is correct by checking we can interact with it
 		page = await browser_context.get_agent_current_page()
@@ -206,11 +220,11 @@ class TestTabManagement:
 
 		# Create two tabs with different URLs
 		initial_tab = browser_context.agent_current_page
-		await browser_context.create_new_tab('https://example.com/page2')
+		await browser_context.create_new_tab(PAGE2_URL)
 		await asyncio.sleep(1)
 
 		# Verify the second tab is now active
-		assert 'example.com/page2' in browser_context.agent_current_page.url
+		assert '#page2' in browser_context.agent_current_page.url
 
 		# Close the current tab
 		await browser_context.close_current_tab()
@@ -222,7 +236,7 @@ class TestTabManagement:
 		assert browser_context.human_current_page == browser_context.agent_current_page
 		assert browser_context.agent_current_page == initial_tab
 		assert not browser_context.human_current_page.is_closed()
-		assert 'example.com/page1' in browser_context.human_current_page.url
+		assert '#page1' in browser_context.human_current_page.url
 
 	@pytest.mark.asyncio
 	async def test_user_changes_tab(self, browser_context):
@@ -231,9 +245,9 @@ class TestTabManagement:
 		await self._ensure_synchronized_state(browser_context)
 
 		# Create a second tab with a different URL
-		await browser_context.create_new_tab('https://example.com/page2')
+		await browser_context.create_new_tab(PAGE2_URL)
 		await asyncio.sleep(1)
-		assert 'example.com/page2' in browser_context.agent_current_page.url
+		assert '#page2' in browser_context.agent_current_page.url
 
 		# Switch back to the first tab for the agent
 		session = await browser_context.get_session()
@@ -244,7 +258,7 @@ class TestTabManagement:
 
 		# Store agent's active tab
 		agent_tab = browser_context.agent_current_page
-		assert 'example.com/page1' in agent_tab.url
+		assert '#page1' in agent_tab.url
 
 		# Simulate user switching to the second tab
 		session = await browser_context.get_session()
@@ -263,8 +277,8 @@ class TestTabManagement:
 		# Verify agent_current_page remains unchanged while human_current_page changed
 		assert browser_context.agent_current_page == agent_tab
 		assert browser_context.human_current_page != browser_context.agent_current_page
-		assert 'example.com/page1' in browser_context.agent_current_page.url
-		assert 'example.com/page2' in browser_context.human_current_page.url
+		assert '#page1' in browser_context.agent_current_page.url
+		assert '#page2' in browser_context.human_current_page.url
 
 	@pytest.mark.asyncio
 	async def test_get_agent_current_page(self, browser_context):
@@ -273,7 +287,7 @@ class TestTabManagement:
 		await self._ensure_synchronized_state(browser_context)
 
 		# Create a second tab with a different URL
-		await browser_context.create_new_tab('https://example.com/page2')
+		await browser_context.create_new_tab(PAGE2_URL)
 		await asyncio.sleep(1)
 
 		# Switch back to the first tab for the agent
@@ -289,7 +303,7 @@ class TestTabManagement:
 		agent_page = await browser_context.get_agent_current_page()
 		assert agent_page == browser_context.agent_current_page
 		assert agent_page != browser_context.human_current_page
-		assert 'example.com/page1' in agent_page.url
+		assert '#page1' in agent_page.url
 
 		# Call a method on the page to verify it's fully functional
 		title = await agent_page.title()
@@ -302,7 +316,7 @@ class TestTabManagement:
 		await self._ensure_synchronized_state(browser_context)
 
 		# Create a second tab with a different URL
-		await browser_context.create_new_tab('https://example.com/page2')
+		await browser_context.create_new_tab(PAGE2_URL)
 		await asyncio.sleep(1)
 
 		# Switch back to the first tab for the agent
@@ -316,18 +330,18 @@ class TestTabManagement:
 
 		# Verify we have the setup we want
 		assert browser_context.human_current_page != browser_context.agent_current_page
-		assert 'example.com/page2' in browser_context.human_current_page.url
-		assert 'example.com/page1' in browser_context.agent_current_page.url
+		assert '#page2' in browser_context.human_current_page.url
+		assert '#page1' in browser_context.agent_current_page.url
 
 		# Execute a navigation directly on agent's tab
 		agent_page = await browser_context.get_agent_current_page()
-		await agent_page.goto('https://bing.com')
+		await agent_page.goto(BING_URL)
 		await asyncio.sleep(0.5)
 
 		# Verify navigation happened on agent_current_page
-		assert 'bing.com' in browser_context.agent_current_page.url
+		assert '#bing' in browser_context.agent_current_page.url
 		# But human_current_page remains unchanged
-		assert 'example.com/page2' in browser_context.human_current_page.url
+		assert '#page2' in browser_context.human_current_page.url
 
 	@pytest.mark.asyncio
 	async def test_tab_reference_recovery(self, browser_context):
@@ -336,7 +350,7 @@ class TestTabManagement:
 		await self._ensure_synchronized_state(browser_context)
 
 		# Create a second tab so we have multiple
-		await browser_context.create_new_tab('https://example.com/page2')
+		await browser_context.create_new_tab(PAGE2_URL)
 		await asyncio.sleep(1)
 
 		# Deliberately corrupt the agent_current_page reference
@@ -385,9 +399,9 @@ class TestTabManagement:
 		await self._ensure_synchronized_state(browser_context)
 
 		# Create two more tabs to have three in total
-		await browser_context.create_new_tab('https://example.com/page2')
+		await browser_context.create_new_tab(PAGE2_URL)
 		await asyncio.sleep(0.5)
-		await browser_context.create_new_tab('https://example.com/page3')
+		await browser_context.create_new_tab(PAGE3_URL)
 		await asyncio.sleep(0.5)
 
 		# Verify we have at least 3 tabs
@@ -408,8 +422,8 @@ class TestTabManagement:
 
 		# Verify we can still navigate on the final tab
 		page = await browser_context.get_agent_current_page()
-		await page.goto('https://example.com/page4')
-		assert 'example.com/page4' in page.url
+		await page.goto(PAGE4_URL)
+		assert '#page4' in page.url
 
 	@pytest.mark.asyncio
 	async def test_tab_management_using_controller_actions(self, browser_context, controller):
@@ -444,25 +458,25 @@ class TestTabManagement:
 			close_tab: CloseTabAction | None = None
 
 		# Create second tab with OpenTabAction
-		open_tab_action = {'open_tab': OpenTabAction(url='https://example.com/page2')}
+		open_tab_action = {'open_tab': OpenTabAction(url=PAGE2_URL)}
 		await controller.act(OpenTabActionModel(**open_tab_action), browser_context)
 		await asyncio.sleep(1)  # Wait for the tab to fully initialize
 
 		# Verify the second tab is opened and active for both agent and human
 		second_tab = browser_context.agent_current_page
 		assert browser_context.human_current_page == browser_context.agent_current_page
-		assert 'example.com/page2' in browser_context.agent_current_page.url
+		assert '#page2' in browser_context.agent_current_page.url
 		second_tab_id = second_tab.page_id if hasattr(second_tab, 'page_id') else 1
 
 		# Create third tab with OpenTabAction
-		open_tab_action2 = {'open_tab': OpenTabAction(url='https://example.com/page3')}
+		open_tab_action2 = {'open_tab': OpenTabAction(url=PAGE3_URL)}
 		await controller.act(OpenTabActionModel(**open_tab_action2), browser_context)
 		await asyncio.sleep(1)  # Wait for the tab to fully initialize
 
 		# Verify the third tab is opened and active
 		third_tab = browser_context.agent_current_page
 		assert browser_context.human_current_page == browser_context.agent_current_page
-		assert 'example.com/page3' in browser_context.agent_current_page.url
+		assert '#page3' in browser_context.agent_current_page.url
 		third_tab_id = third_tab.page_id if hasattr(third_tab, 'page_id') else 2
 
 		# Use SwitchTabAction to go back to the first tab (for the agent)
@@ -472,7 +486,7 @@ class TestTabManagement:
 
 		# Verify agent is now on the first tab
 		assert browser_context.agent_current_page == initial_tab
-		assert 'example.com/page1' in browser_context.agent_current_page.url
+		assert '#page1' in browser_context.agent_current_page.url
 		assert browser_context.human_current_page == browser_context.agent_current_page
 
 		# Simulate human switching to the second tab
@@ -483,21 +497,21 @@ class TestTabManagement:
 		assert browser_context.human_current_page == second_tab
 		assert browser_context.agent_current_page == initial_tab
 		assert browser_context.human_current_page != browser_context.agent_current_page
-		assert 'example.com/page2' in browser_context.human_current_page.url
-		assert 'example.com/page1' in browser_context.agent_current_page.url
+		assert '#page2' in browser_context.human_current_page.url
+		assert '#page1' in browser_context.agent_current_page.url
 
 		# Use GoToUrlAction to navigate the agent's tab to a new URL
-		goto_action = {'go_to_url': GoToUrlAction(url='https://example.com/page4')}
+		goto_action = {'go_to_url': GoToUrlAction(url=PAGE4_URL)}
 		await controller.act(GoToUrlActionModel(**goto_action), browser_context)
 		await asyncio.sleep(0.5)
 
 		# Refresh the agent's page reference and verify navigation
 		agent_page = await browser_context.get_agent_current_page()
 		assert agent_page is not None
-		assert 'example.com/page4' in agent_page.url
+		assert '#page4' in agent_page.url
 
 		# Verify human's tab remains unchanged
-		assert 'example.com/page2' in browser_context.human_current_page.url
+		assert '#page2' in browser_context.human_current_page.url
 
 		# Use CloseTabAction to close the third tab
 		close_tab_action = {'close_tab': CloseTabAction(page_id=third_tab_id)}
@@ -525,4 +539,4 @@ class TestTabManagement:
 
 		# Verify the URL of the remaining tab
 		final_page = await browser_context.get_current_page()
-		assert 'example.com' in final_page.url
+		assert '#page4' in final_page.url

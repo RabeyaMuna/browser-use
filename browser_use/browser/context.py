@@ -1770,6 +1770,8 @@ class BrowserContext:
 			await new_page.goto(url)
 			await self._wait_for_page_and_frames_load(timeout_overwrite=1)
 
+		await self._add_tab_foregrounding_listener(new_page)
+
 		# Get target ID for new page if using CDP
 		if self.browser.config.cdp_url:
 			targets = await self._get_cdp_targets()
