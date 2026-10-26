@@ -1,11 +1,10 @@
 import json
 from collections.abc import Mapping
 from dataclasses import dataclass
-from typing import Any, TypeVar, overload
+from typing import Any, TypeVar, cast, overload
 
 import httpx
 from anthropic import (
-	NOT_GIVEN,
 	APIConnectionError,
 	APIStatusError,
 	AsyncAnthropic,
@@ -130,12 +129,14 @@ class ChatAnthropic(BaseChatModel):
 		try:
 			if output_format is None:
 				# Normal completion without structured output
-				response = await self.get_client().messages.create(
-					model=self.model,
-					messages=anthropic_messages,
-					system=system_prompt or NOT_GIVEN,
+				create_params: dict[str, Any] = {
+					'model': self.model,
+					'messages': anthropic_messages,
 					**self._get_client_params_for_invoke(),
-				)
+				}
+				if system_prompt is not None:
+					create_params['system'] = system_prompt
+				response = await cast(Any, self.get_client().messages).create(**create_params)
 
 				usage = self._get_usage(response)
 
@@ -172,14 +173,16 @@ class ChatAnthropic(BaseChatModel):
 				# Force the model to use this tool
 				tool_choice = ToolChoiceToolParam(type='tool', name=tool_name)
 
-				response = await self.get_client().messages.create(
-					model=self.model,
-					messages=anthropic_messages,
-					tools=[tool],
-					system=system_prompt or NOT_GIVEN,
-					tool_choice=tool_choice,
+				create_params: dict[str, Any] = {
+					'model': self.model,
+					'messages': anthropic_messages,
+					'tools': [tool],
+					'tool_choice': tool_choice,
 					**self._get_client_params_for_invoke(),
-				)
+				}
+				if system_prompt is not None:
+					create_params['system'] = system_prompt
+				response = await cast(Any, self.get_client().messages).create(**create_params)
 
 				usage = self._get_usage(response)
 
