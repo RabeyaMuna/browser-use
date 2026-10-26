@@ -1,6 +1,6 @@
 from collections.abc import Mapping
 from dataclasses import dataclass
-from typing import Any, TypeVar, overload
+from typing import Any, Literal, TypeVar, overload
 
 import httpx
 from openai import APIConnectionError, APIStatusError, AsyncOpenAI, RateLimitError
@@ -33,7 +33,7 @@ class ChatOpenAI(BaseChatModel):
 
 	# Model params
 	temperature: float | None = None
-	reasoning_effort: str = 'low'
+	reasoning_effort: Literal['none', 'minimal', 'low', 'medium', 'high'] = 'low'
 
 	# Client initialization parameters
 	api_key: str | None = None
