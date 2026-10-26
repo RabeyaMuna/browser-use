@@ -43,7 +43,7 @@ class StorageStateWatchdog(BaseWatchdog):
 
 	# Private state
 	_monitoring_task: asyncio.Task | None = PrivateAttr(default=None)
-	_last_cookie_state: list[Cookie] = PrivateAttr(default_factory=list)
+	_last_cookie_state: list[Any] = PrivateAttr(default_factory=list)
 	_save_lock: asyncio.Lock = PrivateAttr(default_factory=asyncio.Lock)
 
 	async def on_BrowserStartedEvent(self, event: BrowserStartedEvent) -> None:
