@@ -855,8 +855,9 @@ class BrowserUseApp(App):
 				# Extract original task(s)
 				original_tasks = []
 				for msg in message_history:
-					if hasattr(msg, 'message') and hasattr(msg.message, 'content'):
-						content = msg.message.content
+					message = getattr(msg, 'message', None)
+					if message is not None and hasattr(message, 'content'):
+						content = getattr(message, 'content')
 						if isinstance(content, str) and 'Your ultimate task is:' in content:
 							task_text = content.split('"""')[1].strip()
 							original_tasks.append(task_text)
