@@ -7,9 +7,10 @@ import base64
 import io
 import json
 import logging
+from collections.abc import Iterable
 from enum import Enum
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 from PIL import Image
 from pydantic import BaseModel
@@ -199,7 +200,7 @@ def are_images_identical(img_path1: str, img_path2: str) -> bool:
 				return False
 
 			# Compare pixel data
-			return list(img1.getdata()) == list(img2.getdata())
+			return list(cast(Iterable[Any], img1.getdata())) == list(cast(Iterable[Any], img2.getdata()))
 	except Exception as e:
 		logger.warning(f'Failed to compare images {img_path1} and {img_path2}: {e}')
 		return False
