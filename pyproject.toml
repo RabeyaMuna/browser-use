@@ -101,8 +101,8 @@ include = [
     "browser_use/dom/buildDomTree.js",
 ]
 
-[tool.uv]
-dev-dependencies = [
+[dependency-groups]
+dev = [
     "ruff>=0.11.2",
     "tokencost>=0.1.16",
     "build>=1.2.2",
