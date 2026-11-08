@@ -5,7 +5,7 @@ import logging
 import re
 from collections.abc import Callable
 from inspect import Parameter, iscoroutinefunction, signature
-from typing import Any, Generic, Optional, TypeVar, Union, get_args, get_origin
+from typing import Any, Generic, Optional, TypeVar, Union, cast, get_args, get_origin
 
 from pydantic import BaseModel, Field, RootModel, create_model
 
@@ -39,7 +39,7 @@ class Registry(Generic[Context]):
 		self.telemetry = ProductTelemetry()
 		self.exclude_actions = exclude_actions if exclude_actions is not None else []
 
-	def _get_special_param_types(self) -> dict[str, type | None]:
+	def _get_special_param_types(self) -> dict[str, Any]:
 		"""Get the expected types for special parameters from SpecialActionParameters"""
 		# Manually define the expected types to avoid issues with Optional handling.
 		# we should try to reduce this list to 0 if possible, give as few standardized objects to all the actions
@@ -505,25 +505,29 @@ class Registry(Generic[Context]):
 				available_actions[name] = action
 
 		# Create individual action models for each action
-		individual_action_models = []
+		individual_action_models: list[type[ActionModel]] = []
 
 		for name, action in available_actions.items():
 			# Create an individual model for each action that contains only one field
-			individual_model = create_model(
-				f'{name.title().replace("_", "")}ActionModel',
-				__base__=ActionModel,
-				**{
-					name: (
-						action.param_model,
-						Field(description=action.description),
-					)
-				},
+			field_definitions: dict[str, Any] = {
+				name: (
+					action.param_model,
+					Field(description=action.description),
+				)
+			}
+			individual_model = cast(
+				type[ActionModel],
+				create_model(
+					f'{name.title().replace("_", "")}ActionModel',
+					__base__=ActionModel,
+					**field_definitions,
+				),
 			)
 			individual_action_models.append(individual_model)
 
 		# If no actions available, return empty ActionModel
 		if not individual_action_models:
-			return create_model('EmptyActionModel', __base__=ActionModel)
+			return cast(type[ActionModel], create_model('EmptyActionModel', __base__=ActionModel))
 
 		# Create proper Union type that maintains ActionModel interface
 		if len(individual_action_models) == 1:
@@ -531,26 +535,29 @@ class Registry(Generic[Context]):
 			result_model = individual_action_models[0]
 		else:
 			# Create a Union type using RootModel that properly delegates ActionModel methods
-			union_type = Union[tuple(individual_action_models)]
+			union_type: Any = Union[tuple(individual_action_models)]
 
 			class ActionModelUnion(RootModel[union_type]):  # type: ignore
 				"""Union of all available action models that maintains ActionModel interface"""
 
 				def get_index(self) -> int | None:
 					"""Delegate get_index to the underlying action model"""
-					if hasattr(self.root, 'get_index'):
-						return self.root.get_index()
+					root = cast(ActionModel, self.root)
+					if hasattr(root, 'get_index'):
+						return root.get_index()
 					return None
 
 				def set_index(self, index: int):
 					"""Delegate set_index to the underlying action model"""
-					if hasattr(self.root, 'set_index'):
-						self.root.set_index(index)
+					root = cast(ActionModel, self.root)
+					if hasattr(root, 'set_index'):
+						root.set_index(index)
 
 				def model_dump(self, **kwargs):
 					"""Delegate model_dump to the underlying action model"""
-					if hasattr(self.root, 'model_dump'):
-						return self.root.model_dump(**kwargs)
+					root = cast(ActionModel, self.root)
+					if hasattr(root, 'model_dump'):
+						return root.model_dump(**kwargs)
 					return super().model_dump(**kwargs)
 
 			# Set the name for better debugging
