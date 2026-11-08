@@ -154,6 +154,7 @@ dev-dependencies = [
     "ipdb>=0.13.13",
     "pre-commit>=4.2.0",
     "codespell>=2.4.1",
-    "pyright>=1.1.399",
+    # 1.1.409+ crashes with a stack overflow while analyzing browser_use/__init__.py.
+    "pyright>=1.1.399,<1.1.409",
     "ty>=0.0.1a1",
 ]
