@@ -319,13 +319,17 @@ class Browser:
 			],
 		}
 
-		browser = await browser_class.launch(
-			headless=self.config.headless,
-			args=args[self.config.browser_class],
-			proxy=self.config.proxy.model_dump() if self.config.proxy else None,
-			handle_sigterm=False,
-			handle_sigint=False,
-		)
+		launch_kwargs = {
+			'headless': self.config.headless,
+			'args': args[self.config.browser_class],
+			'proxy': self.config.proxy.model_dump() if self.config.proxy else None,
+			'handle_sigterm': False,
+			'handle_sigint': False,
+		}
+		if self.config.browser_class == 'chromium' and self.config.headless:
+			launch_kwargs['executable_path'] = browser_class.executable_path
+
+		browser = await browser_class.launch(**launch_kwargs)
 		return browser
 
 	async def _setup_browser(self, playwright: Playwright) -> PlaywrightBrowser:

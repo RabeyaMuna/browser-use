@@ -1,4 +1,5 @@
 import asyncio
+import base64
 import time
 
 import pytest
@@ -24,17 +25,31 @@ from browser_use.controller.views import (
 )
 
 
+def _test_page_url(page_id: str, title: str | None = None, body: str | None = None) -> str:
+	page_title = title or page_id
+	page_body = body or page_id
+	html = f'<html><head><title>{page_title}</title></head><body>{page_body}</body></html>'
+	encoded_html = base64.b64encode(html.encode()).decode()
+	return f'data:text/html;base64,{encoded_html}#{page_id}'
+
+
+GOOGLE_URL = _test_page_url('google', 'Google Test')
+YAHOO_URL = _test_page_url('yahoo', 'Yahoo Test')
+WIKIPEDIA_URL = _test_page_url('wikipedia', 'Wikipedia Test')
+GITHUB_URL = _test_page_url('github', 'GitHub Test')
+
+
 class TestControllerIntegration:
 	"""Integration tests for Controller using actual browser instances."""
 
-	@pytest.fixture(scope='module')
+	@pytest.fixture
 	def event_loop(self):
 		"""Create and provide an event loop for async tests."""
 		loop = asyncio.get_event_loop_policy().new_event_loop()
 		yield loop
 		loop.close()
 
-	@pytest.fixture(scope='module')
+	@pytest.fixture
 	async def browser(self, event_loop):
 		"""Create and provide a Browser instance with security disabled."""
 		browser_instance = Browser(
@@ -62,7 +77,7 @@ class TestControllerIntegration:
 	async def test_go_to_url_action(self, controller, browser_context):
 		"""Test that GoToUrlAction navigates to the specified URL."""
 		# Create action model for go_to_url
-		action_data = {'go_to_url': GoToUrlAction(url='https://google.com')}
+		action_data = {'go_to_url': GoToUrlAction(url=GOOGLE_URL)}
 
 		# Create the ActionModel instance
 		class GoToUrlActionModel(ActionModel):
@@ -75,17 +90,17 @@ class TestControllerIntegration:
 
 		# Verify the result
 		assert isinstance(result, ActionResult)
-		assert 'Navigated to https://google.com' in result.extracted_content
+		assert f'Navigated to {GOOGLE_URL}' in result.extracted_content
 
 		# Verify the current page URL
 		page = await browser_context.get_current_page()
-		assert 'google.com' in page.url
+		assert '#google' in page.url
 
 	@pytest.mark.asyncio
 	async def test_scroll_actions(self, controller, browser_context):
 		"""Test that scroll actions correctly scroll the page."""
 		# First navigate to a page
-		goto_action = {'go_to_url': GoToUrlAction(url='https://google.com')}
+		goto_action = {'go_to_url': GoToUrlAction(url=GOOGLE_URL)}
 
 		class GoToUrlActionModel(ActionModel):
 			go_to_url: GoToUrlAction | None = None
@@ -155,7 +170,7 @@ class TestControllerIntegration:
 			return ActionResult(extracted_content=f'Custom action executed with: {params.text} on {page.url}')
 
 		# Navigate to a page first
-		goto_action = {'go_to_url': GoToUrlAction(url='https://google.com')}
+		goto_action = {'go_to_url': GoToUrlAction(url=GOOGLE_URL)}
 
 		class GoToUrlActionModel(ActionModel):
 			go_to_url: GoToUrlAction | None = None
@@ -174,7 +189,7 @@ class TestControllerIntegration:
 		# Verify the result
 		assert isinstance(result, ActionResult)
 		assert 'Custom action executed with: test_value on' in result.extracted_content
-		assert 'google.com' in result.extracted_content
+		assert '#google' in result.extracted_content
 
 	@pytest.mark.asyncio
 	async def test_excluded_actions(self, browser_context):
@@ -194,7 +209,7 @@ class TestControllerIntegration:
 	async def test_input_text_action(self, controller, browser_context):
 		"""Test that InputTextAction correctly inputs text into form fields."""
 		# Navigate to a page with a form
-		goto_action = {'go_to_url': GoToUrlAction(url='https://yahoo.com')}
+		goto_action = {'go_to_url': GoToUrlAction(url=YAHOO_URL)}
 
 		class GoToUrlActionModel(ActionModel):
 			go_to_url: GoToUrlAction | None = None
@@ -275,7 +290,7 @@ class TestControllerIntegration:
 	async def test_go_back_action(self, controller, browser_context):
 		"""Test that go_back action navigates to the previous page."""
 		# Navigate to first page
-		goto_action1 = {'go_to_url': GoToUrlAction(url='https://google.com')}
+		goto_action1 = {'go_to_url': GoToUrlAction(url=GOOGLE_URL)}
 
 		class GoToUrlActionModel(ActionModel):
 			go_to_url: GoToUrlAction | None = None
@@ -288,14 +303,14 @@ class TestControllerIntegration:
 		print(f'First page URL: {first_url}')
 
 		# Navigate to second page
-		goto_action2 = {'go_to_url': GoToUrlAction(url='https://yahoo.com')}
+		goto_action2 = {'go_to_url': GoToUrlAction(url=YAHOO_URL)}
 		await controller.act(GoToUrlActionModel(**goto_action2), browser_context)
 
 		# Verify we're on the second page
 		page2 = await browser_context.get_current_page()
 		second_url = page2.url
 		print(f'Second page URL: {second_url}')
-		assert 'yahoo.com' in second_url.lower()
+		assert '#yahoo' in second_url.lower()
 
 		# Execute go back action
 		go_back_action = {'go_back': NoParamsAction()}
@@ -318,13 +333,13 @@ class TestControllerIntegration:
 		print(f'Final page URL after going back: {final_url}')
 
 		# Try to verify we're back on the first page, but don't fail the test if not
-		assert 'google.com' in final_url, f'Expected to return to Google but got {final_url}'
+		assert '#google' in final_url, f'Expected to return to Google but got {final_url}'
 
 	@pytest.mark.asyncio
 	async def test_navigation_chain(self, controller, browser_context):
 		"""Test navigating through multiple pages and back through history."""
 		# Set up a chain of navigation: Google -> Wikipedia -> GitHub
-		urls = ['https://google.com', 'https://en.wikipedia.org', 'https://github.com']
+		urls = [GOOGLE_URL, WIKIPEDIA_URL, GITHUB_URL]
 
 		# Navigate to each page in sequence
 		for url in urls:
@@ -337,7 +352,7 @@ class TestControllerIntegration:
 
 			# Verify current page
 			page = await browser_context.get_current_page()
-			assert url.split('//')[1] in page.url
+			assert url.rsplit('#', 1)[1] in page.url
 
 		# Go back twice and verify each step
 		for expected_url in reversed(urls[:-1]):
@@ -350,13 +365,13 @@ class TestControllerIntegration:
 			await asyncio.sleep(1)  # Wait for navigation to complete
 
 			page = await browser_context.get_current_page()
-			assert expected_url.split('//')[1] in page.url
+			assert expected_url.rsplit('#', 1)[1] in page.url
 
 	@pytest.mark.asyncio
 	async def test_concurrent_tab_operations(self, controller, browser_context):
 		"""Test operations across multiple tabs."""
 		# Create two tabs with different content
-		urls = ['https://google.com', 'https://yahoo.com']
+		urls = [GOOGLE_URL, YAHOO_URL]
 
 		# First tab
 		goto_action1 = {'go_to_url': GoToUrlAction(url=urls[0])}
@@ -376,7 +391,7 @@ class TestControllerIntegration:
 
 		# Verify we're on second tab
 		page = await browser_context.get_current_page()
-		assert urls[1].split('//')[1] in page.url
+		assert urls[1].rsplit('#', 1)[1] in page.url
 
 		# Switch back to first tab
 		switch_tab_action = {'switch_tab': SwitchTabAction(page_id=0)}
@@ -388,7 +403,7 @@ class TestControllerIntegration:
 
 		# Verify we're back on first tab
 		page = await browser_context.get_current_page()
-		assert urls[0].split('//')[1] in page.url
+		assert urls[0].rsplit('#', 1)[1] in page.url
 
 		# Close the second tab
 		close_tab_action = {'close_tab': CloseTabAction(page_id=1)}
@@ -401,7 +416,7 @@ class TestControllerIntegration:
 		# Verify only one tab remains
 		tabs_info = await browser_context.get_tabs_info()
 		assert len(tabs_info) == 1
-		assert urls[0].split('//')[1] in tabs_info[0].url
+		assert urls[0].rsplit('#', 1)[1] in tabs_info[0].url
 
 	@pytest.mark.asyncio
 	async def test_search_google_action(self, controller, browser_context):
@@ -706,8 +721,8 @@ class TestControllerIntegration:
 							const resultEl = document.getElementById('result');
 							resultEl.textContent += '\\nKeydown: ' + e.key;
 							
-							// For Ctrl+A, detect and show selection
-							if (e.key === 'a' && e.ctrlKey) {
+							// For select-all shortcuts, detect and show selection
+							if (e.key.toLowerCase() === 'a' && (e.ctrlKey || e.metaKey)) {
 								setTimeout(() => {
 									resultEl.textContent += '\\nSelection length: ' + 
 										(window.getSelection().toString().length || 
@@ -799,14 +814,14 @@ class TestControllerIntegration:
 			for char in test_text:
 				assert f'Keydown: {char}' in result_text, f"Missing key event for '{char}'"
 
-			# 3. Test Ctrl+A for select all
-			select_all_action = {'send_keys': SendKeysAction(keys='Control+a')}
+			# 3. Test select all
+			select_all_action = {'send_keys': SendKeysAction(keys='ControlOrMeta+A')}
 			select_all_result = await controller.act(SendKeysActionModel(**select_all_action), browser_context)
 			await asyncio.sleep(0.1)
 
 			# Verify select all action result
 			assert isinstance(select_all_result, ActionResult)
-			assert 'Sent keys: Control+a' in select_all_result.extracted_content
+			assert 'Sent keys: ControlOrMeta+A' in select_all_result.extracted_content
 			assert select_all_result.error is None
 
 			# Verify selection length matches the text length
@@ -877,7 +892,7 @@ class TestControllerIntegration:
 	async def test_done_action(self, controller, browser_context):
 		"""Test that DoneAction completes a task and reports success or failure."""
 		# First navigate to a page
-		goto_action = {'go_to_url': GoToUrlAction(url='https://google.com')}
+		goto_action = {'go_to_url': GoToUrlAction(url=GOOGLE_URL)}
 
 		class GoToUrlActionModel(ActionModel):
 			go_to_url: GoToUrlAction | None = None
