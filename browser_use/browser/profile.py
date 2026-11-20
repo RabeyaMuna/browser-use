@@ -23,15 +23,21 @@ from pydantic import AfterValidator, AliasChoices, BaseModel, ConfigDict, Field,
 # PydanticUserError: Please use `typing_extensions.TypedDict` instead of `typing.TypedDict` on Python < 3.12.
 # For further information visit https://errors.pydantic.dev/2.10/u/typed-dict-version
 if sys.version_info < (3, 12):
-	from typing_extensions import TypedDict
+	from typing_extensions import TypedDict as TypedDictExt
 
 	# convert new-style typing.TypedDict used by playwright to old-style typing_extensions.TypedDict used by pydantic
-	ClientCertificate = TypedDict('ClientCertificate', ClientCertificate.__annotations__, total=ClientCertificate.__total__)
-	Geolocation = TypedDict('Geolocation', Geolocation.__annotations__, total=Geolocation.__total__)
-	ProxySettings = TypedDict('ProxySettings', ProxySettings.__annotations__, total=ProxySettings.__total__)
-	ViewportSize = TypedDict('ViewportSize', ViewportSize.__annotations__, total=ViewportSize.__total__)
-	HttpCredentials = TypedDict('HttpCredentials', HttpCredentials.__annotations__, total=HttpCredentials.__total__)
-	StorageState = TypedDict('StorageState', StorageState.__annotations__, total=StorageState.__total__)
+	ClientCertificateExt = TypedDictExt('ClientCertificate', ClientCertificate.__annotations__, total=ClientCertificate.__total__)
+	GeolocationExt = TypedDictExt('Geolocation', Geolocation.__annotations__, total=Geolocation.__total__)
+	ProxySettingsExt = TypedDictExt('ProxySettings', ProxySettings.__annotations__, total=ProxySettings.__total__)
+	ViewportSizeExt = TypedDictExt('ViewportSize', ViewportSize.__annotations__, total=ViewportSize.__total__)
+	HttpCredentialsExt = TypedDictExt('HttpCredentials', HttpCredentials.__annotations__, total=HttpCredentials.__total__)
+	StorageStateExt = TypedDictExt('StorageState', StorageState.__annotations__, total=StorageState.__total__)
+	ClientCertificate = ClientCertificateExt
+	Geolocation = GeolocationExt
+	ProxySettings = ProxySettingsExt
+	ViewportSize = ViewportSizeExt
+	HttpCredentials = HttpCredentialsExt
+	StorageState = StorageStateExt
 
 IN_DOCKER = os.environ.get('IN_DOCKER', 'false').lower()[0] in 'ty1'
 CHROME_DEBUG_PORT = 9242  # use a non-default port to avoid conflicts with other tools / devs using 9222
