@@ -102,10 +102,10 @@ class MCPToolWrapper:
 		# Parse tool parameters to create Pydantic model
 		param_fields = {}
 
-		if tool.inputSchema:
+		if tool.inputSchema:  # type: ignore[reportAttributeAccessIssue]
 			# MCP tools use JSON Schema for parameters
-			properties = tool.inputSchema.get('properties', {})
-			required = set(tool.inputSchema.get('required', []))
+			properties = tool.inputSchema.get('properties', {})  # type: ignore[reportAttributeAccessIssue]
+			required = set(tool.inputSchema.get('required', []))  # type: ignore[reportAttributeAccessIssue]
 
 			for param_name, param_schema in properties.items():
 				# Convert JSON Schema type to Python type
@@ -165,19 +165,19 @@ class MCPToolWrapper:
 
 				# Convert MCP result to ActionResult
 				# MCP tools return results in various formats
-				if hasattr(result, 'content'):
+				if hasattr(result, 'content'):  # type: ignore[reportAttributeAccessIssue]
 					# Handle structured content responses
-					if isinstance(result.content, list):
+					if isinstance(result.content, list):  # type: ignore[reportAttributeAccessIssue]
 						# Multiple content items
 						content_parts = []
-						for item in result.content:
+						for item in result.content:  # type: ignore[reportAttributeAccessIssue]
 							if isinstance(item, TextContent):
 								content_parts.append(item.text)  # type: ignore[reportAttributeAccessIssue]
 							else:
 								content_parts.append(str(item))
 						extracted_content = '\n'.join(content_parts)
 					else:
-						extracted_content = str(result.content)
+						extracted_content = str(result.content)  # type: ignore[reportAttributeAccessIssue]
 				else:
 					# Direct result
 					extracted_content = str(result)
