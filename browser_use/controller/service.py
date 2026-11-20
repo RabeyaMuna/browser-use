@@ -466,31 +466,31 @@ Explain the content of the page and that the requested information is not availa
 				logger.info(msg)
 				return ActionResult(error=str(e))
 
-		@self.registry.action(
-			'Get the accessibility tree of the page in the format "role name" with the number_of_elements to return',
-		)
-		async def get_ax_tree(number_of_elements: int, page: Page):
-			node = await page.accessibility.snapshot(interesting_only=True)
+		# 		@self.registry.action(
+		# 			'Get the accessibility tree of the page in the format "role name" with the number_of_elements to return',
+		# 		)
+		# 		async def get_ax_tree(number_of_elements: int, page: Page):
+		# 			node = await page.accessibility.snapshot(interesting_only=True)
 
-			def flatten_ax_tree(node, lines):
-				if not node:
-					return
-				role = node.get('role', '')
-				name = node.get('name', '')
-				lines.append(f'{role} {name}')
-				for child in node.get('children', []):
-					flatten_ax_tree(child, lines)
+		# 			def flatten_ax_tree(node, lines):
+		# 				if not node:
+		# 					return
+		# 				role = node.get('role', '')
+		# 				name = node.get('name', '')
+		# 				lines.append(f'{role} {name}')
+		# 				for child in node.get('children', []):
+		# 					flatten_ax_tree(child, lines)
 
-			lines = []
-			flatten_ax_tree(node, lines)
-			msg = '\n'.join(lines)
-			logger.info(msg)
-			return ActionResult(
-				extracted_content=msg,
-				include_in_memory=False,
-				long_term_memory='Retrieved accessibility tree',
-				include_extracted_content_only_once=True,
-			)
+		# 			lines = []
+		# 			flatten_ax_tree(node, lines)
+		# 			msg = '\n'.join(lines)
+		# 			logger.info(msg)
+		# 			return ActionResult(
+		# 				extracted_content=msg,
+		# 				include_in_memory=False,
+		# 				long_term_memory='Retrieved accessibility tree',
+		# 				include_extracted_content_only_once=True,
+		# 			)
 
 		@self.registry.action(
 			'Scroll down the page by pixel amount - if none is given, scroll one page',
