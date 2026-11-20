@@ -71,6 +71,7 @@ examples = [
 ]
 eval = [
     "lmnr[all]>=0.6.11",
+    "Pillow>=11.2.1",
 ]
 all = [
     "browser-use[memory,cli,examples]",
