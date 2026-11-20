@@ -2,7 +2,7 @@ import asyncio
 import hashlib
 import logging
 import os
-from typing import Any
+from typing import Any, cast
 
 from browser_use import Agent, BrowserProfile, BrowserSession, Controller
 from browser_use.llm import ChatGoogle
@@ -20,8 +20,8 @@ class WorkerAgent:
 		self.api_key = api_key
 		self.model = model
 		self.headless = headless
-		self.browser: BrowserSession | None = None
-		self.controller: Controller | None = None
+		self.browser: Any = None
+		self.controller: Any = None
 		self.llm = ChatGoogle(model=self.model, api_key=self.api_key, temperature=0.3)
 		self.last_api_call = 0
 		self.min_delay_between_calls = 1  # Reduced delay for better parallelism
@@ -37,7 +37,7 @@ class WorkerAgent:
 			# Create a browser profile optimized for automation
 			from browser_use.browser.types import ViewportSize
 
-			browser_profile = BrowserProfile(
+			browser_profile = cast(Any, BrowserProfile)(
 				headless=self.headless,  # Use the headless setting from constructor
 				user_data_dir=user_data_dir,
 				window_size=ViewportSize(width=1280, height=800),
