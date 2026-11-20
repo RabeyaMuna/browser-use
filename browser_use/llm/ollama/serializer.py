@@ -2,7 +2,7 @@ import base64
 import json
 from typing import Any, overload
 
-from ollama._types import Image, Message
+from ollama import Image, Message
 
 from browser_use.llm.messages import (
 	AssistantMessage,
