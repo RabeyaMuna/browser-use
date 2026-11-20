@@ -1,13 +1,9 @@
 from dataclasses import dataclass
 from functools import cached_property
-from typing import TYPE_CHECKING, Optional
+from typing import Optional
 
 from browser_use.dom.history_tree_processor.view import CoordinateSet, HashedDomElement, ViewportInfo
 from browser_use.utils import time_execution_sync
-
-# Avoid circular import issues
-if TYPE_CHECKING:
-	from .views import DOMElementNode
 
 
 @dataclass(frozen=False)
