@@ -672,7 +672,7 @@ async def test_mcp_nested_object_parameters(test_mcp_server_script):
 		# Verify nested model has the expected fields
 		nested_model = trace_annotation
 		assert hasattr(nested_model, 'model_fields')
-		nested_fields = nested_model.model_fields
+		nested_fields = nested_model.model_fields  # type: ignore[reportAttributeAccessIssue]
 		assert 'recent_actions' in nested_fields
 		assert 'current_context' in nested_fields
 		assert 'goal' in nested_fields

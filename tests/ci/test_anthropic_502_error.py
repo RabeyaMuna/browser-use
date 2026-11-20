@@ -22,10 +22,10 @@ async def test_anthropic_502_error_handling(monkeypatch):
 		class Messages:
 			async def create(self, **kwargs):
 				# Simulate a 502 error from Anthropic API
-				import httpx
+				import httpx2
 
-				request = httpx.Request('POST', 'https://api.anthropic.com/v1/messages')
-				response = httpx.Response(status_code=502, headers={}, content=b'Bad Gateway', request=request)
+				request = httpx2.Request('POST', 'https://api.anthropic.com/v1/messages')
+				response = httpx2.Response(status_code=502, headers={}, content=b'Bad Gateway', request=request)
 				raise APIStatusError(
 					message='Bad Gateway', response=response, body={'error': {'message': 'Bad Gateway', 'type': 'server_error'}}
 				)
