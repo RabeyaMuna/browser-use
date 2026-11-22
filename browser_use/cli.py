@@ -13,6 +13,7 @@ from dotenv import load_dotenv
 from browser_use.llm.anthropic.chat import ChatAnthropic
 from browser_use.llm.google.chat import ChatGoogle
 from browser_use.llm.openai.chat import ChatOpenAI
+from browser_use.llm.schema import UserMessage, SystemMessage, AssistantMessage
 
 load_dotenv()
 
