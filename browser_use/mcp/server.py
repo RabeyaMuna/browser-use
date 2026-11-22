@@ -699,11 +699,12 @@ class BrowserUseServer:
 		# Use the extract_structured_data action
 		# Create a dynamic action model that matches the controller's expectations
 		from pydantic import create_model
+		from pydantic_settings import BaseSettings
 
 		# Create action model dynamically
 		ExtractAction = create_model(
 			'ExtractAction',
-			__base__=ActionModel,
+			__base__=BaseSettings,
 			extract_structured_data=(dict[str, Any], {'query': query, 'extract_links': extract_links}),
 		)
 

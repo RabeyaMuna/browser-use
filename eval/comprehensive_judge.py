@@ -9,7 +9,7 @@ import json
 import logging
 from enum import Enum
 from pathlib import Path
-from typing import Any
+from typing import Any, List, Dict, Union
 
 from PIL import Image
 from pydantic import BaseModel
@@ -25,10 +25,10 @@ from browser_use.llm.messages import (
 )
 from browser_use.observability import observe_debug
 
-logger = logging.getLogger(__name__)
+logger: logging.Logger = logging.getLogger(__name__)
 
 
-class ErrorCategory(Enum):
+class ErrorCategory(str, Enum):
 	# Access & Authentication
 	CAPTCHA = 'captcha'
 	LOGIN_FAILED = 'login_failed'
@@ -58,7 +58,7 @@ class ErrorCategory(Enum):
 	FILE_SYSTEM_MISUSE = 'file_system_misuse'  # Not saving results or tracking progress
 
 
-class TaskCategory(Enum):
+class TaskCategory(str, Enum):
 	EXTRACTION = 'extraction'
 	INTERACTION = 'interaction'
 	LOGIN = 'login'
@@ -82,12 +82,12 @@ class JudgeResult(BaseModel):
 
 	# Analysis
 	reasoning: str  # What went well/not well analysis
-	error_categories: list[ErrorCategory]  # Core error categories identified
+	error_categories: List[ErrorCategory]  # Core error categories identified
 
 	final_score: int  # Overall score (0-100) - percentage of task completion
 
 	# Developer Feedback
-	improvement_tips: list[str]  # Concrete improvement suggestions
+	improvement_tips: List[str]  # Concrete improvement suggestions
 
 
 def encode_image(image_path: str) -> str:
@@ -115,7 +115,7 @@ def truncate_text(text: str, max_length: int, from_beginning: bool = False) -> s
 
 
 @observe_debug()
-def prepare_agent_steps(complete_history: list[dict]) -> list[str]:
+def prepare_agent_steps(complete_history: List[Dict[str, Any]]) -> List[str]:
 	"""Extract and format agent steps, limiting each to 2000 characters.
 
 	Excludes the last step if it contains a 'done' action, since that content
@@ -203,7 +203,7 @@ def are_images_identical(img_path1: str, img_path2: str) -> bool:
 
 
 @observe_debug()
-def filter_images(screenshot_paths: list[str], max_images: int) -> list[str]:
+def filter_images(screenshot_paths: List[str], max_images: int) -> List[str]:
 	"""
 	Filter screenshot paths to:
 	1. Never include the first image (always white)
@@ -237,10 +237,10 @@ def filter_images(screenshot_paths: list[str], max_images: int) -> list[str]:
 @observe_debug()
 async def comprehensive_judge(
 	task: str,
-	complete_history: list[dict],
+	complete_history: List[Dict[str, Any]],
 	final_result: str,
 	last_message: str,
-	screenshot_paths: list[str],
+	screenshot_paths: List[str],
 	model: BaseChatModel,
 	max_images: int = 10,
 ) -> JudgeResult:

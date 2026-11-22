@@ -12,6 +12,7 @@ from uuid import uuid4
 import psutil
 from pydantic import BaseModel, ConfigDict, Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
+import pydantic_settings
 
 logger = logging.getLogger(__name__)
 
