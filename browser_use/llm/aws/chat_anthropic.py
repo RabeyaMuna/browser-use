@@ -7,7 +7,7 @@ from anthropic import (
 	NOT_GIVEN,
 	APIConnectionError,
 	APIStatusError,
-	AsyncAnthropicBedrock,
+	AnthropicBedrock,
 	RateLimitError,
 )
 from anthropic.types import CacheControlEphemeralParam, Message, ToolParam
@@ -157,7 +157,7 @@ class ChatAnthropicBedrock(ChatAWSBedrock):
 		try:
 			if output_format is None:
 				# Normal completion without structured output
-				response = await self.get_client().messages.create(
+				response = await self.get_client().create_message(
 					model=self.model,
 					messages=anthropic_messages,
 					system=system_prompt or NOT_GIVEN,
@@ -199,7 +199,7 @@ class ChatAnthropicBedrock(ChatAWSBedrock):
 				# Force the model to use this tool
 				tool_choice = ToolChoiceToolParam(type='tool', name=tool_name)
 
-				response = await self.get_client().messages.create(
+				response = await self.get_client().create_message(
 					model=self.model,
 					messages=anthropic_messages,
 					tools=[tool],
