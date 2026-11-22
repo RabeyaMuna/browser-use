@@ -7,9 +7,9 @@ from anthropic import (
 	NOT_GIVEN,
 	APIConnectionError,
 	APIStatusError,
-	AsyncAnthropicBedrock,
 	RateLimitError,
 )
+from anthropic.bedrock import AsyncAnthropicBedrock
 from anthropic.types import CacheControlEphemeralParam, Message, ToolParam
 from anthropic.types.text_block import TextBlock
 from anthropic.types.tool_choice_tool_param import ToolChoiceToolParam
@@ -22,7 +22,7 @@ from browser_use.llm.messages import BaseMessage
 from browser_use.llm.views import ChatInvokeCompletion, ChatInvokeUsage
 
 if TYPE_CHECKING:
-	from boto3.session import Session  # pyright: ignore
+from boto3.session import Session
 
 
 T = TypeVar('T', bound=BaseModel)

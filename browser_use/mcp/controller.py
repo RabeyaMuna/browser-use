@@ -17,7 +17,7 @@ from browser_use.utils import is_new_tab_page
 logger = logging.getLogger(__name__)
 
 try:
-	from mcp import ClientSession, StdioServerParameters
+	from mcp.client import ClientSession, StdioServerParameters
 	from mcp.client.stdio import stdio_client
 	from mcp.types import TextContent, Tool
 
@@ -102,7 +102,7 @@ class MCPToolWrapper:
 		# Parse tool parameters to create Pydantic model
 		param_fields = {}
 
-		if tool.inputSchema:
+		if hasattr(tool, 'inputSchema') and tool.inputSchema:
 			# MCP tools use JSON Schema for parameters
 			properties = tool.inputSchema.get('properties', {})
 			required = set(tool.inputSchema.get('required', []))
@@ -172,7 +172,7 @@ class MCPToolWrapper:
 						content_parts = []
 						for item in result.content:
 							if isinstance(item, TextContent):
-								content_parts.append(item.text)  # type: ignore[reportAttributeAccessIssue]
+								content_parts.append(getattr(item, 'text', str(item)))
 							else:
 								content_parts.append(str(item))
 						extracted_content = '\n'.join(content_parts)
