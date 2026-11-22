@@ -39,7 +39,7 @@ class ChatDeepSeek(BaseChatModel):
 
 	# 连接参数
 	api_key: str | None = None
-	base_url: str | httpx.URL | None = 'https://api.deepseek.com/v1'
+	base_url: str | httpx.URL | None = None
 	timeout: float | httpx.Timeout | None = None
 	client_params: dict[str, Any] | None = None
 

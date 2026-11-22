@@ -1,6 +1,6 @@
 import base64
 
-from google.genai.types import Content, ContentListUnion, Part
+from google.generativeai.types import Content, ContentListUnion, Part
 
 from browser_use.llm.messages import (
 	AssistantMessage,

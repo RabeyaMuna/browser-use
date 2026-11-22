@@ -28,6 +28,7 @@ import time
 from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field, create_model
+from pydantic_settings import BaseSettings
 
 from browser_use.agent.views import ActionResult
 from browser_use.controller.registry.service import Registry
@@ -254,10 +255,10 @@ class MCPClient:
 		# Parse tool parameters to create Pydantic model
 		param_fields = {}
 
-		if tool.inputSchema:
+		if hasattr(tool, 'inputSchema') and tool.inputSchema:
 			# MCP tools use JSON Schema for parameters
-			properties = tool.inputSchema.get('properties', {})
-			required = set(tool.inputSchema.get('required', []))
+			properties = tool.inputSchema.get('properties', {}) if hasattr(tool.inputSchema, 'get') else {}
+			required = set(tool.inputSchema.get('required', [])) if hasattr(tool.inputSchema, 'get') else set()
 
 			for param_name, param_schema in properties.items():
 				# Convert JSON Schema type to Python type
@@ -307,7 +308,7 @@ class MCPClient:
 		# Need to define function with explicit parameters to satisfy registry validation
 		if param_model:
 			# Type 1: Function takes param model as first parameter
-			async def mcp_action_wrapper(params: param_model) -> ActionResult:  # type: ignore[no-redef]
+			async def mcp_action_wrapper(params: param_model) -> ActionResult:
 				"""Wrapper function that calls the MCP tool."""
 				if not self.session or not self._connected:
 					return ActionResult(error=f"MCP server '{self.server_name}' not connected", success=False)
@@ -353,7 +354,7 @@ class MCPClient:
 					)
 		else:
 			# No parameters - empty function signature
-			async def mcp_action_wrapper() -> ActionResult:  # type: ignore[no-redef]
+			async def mcp_action_wrapper() -> ActionResult:
 				"""Wrapper function that calls the MCP tool."""
 				if not self.session or not self._connected:
 					return ActionResult(error=f"MCP server '{self.server_name}' not connected", success=False)

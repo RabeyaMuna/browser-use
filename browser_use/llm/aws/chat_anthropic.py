@@ -14,6 +14,7 @@ from anthropic.types import CacheControlEphemeralParam, Message, ToolParam
 from anthropic.types.text_block import TextBlock
 from anthropic.types.tool_choice_tool_param import ToolChoiceToolParam
 from pydantic import BaseModel
+from pydantic_settings import BaseSettings
 
 from browser_use.llm.anthropic.serializer import AnthropicMessageSerializer
 from browser_use.llm.aws.chat_bedrock import ChatAWSBedrock
@@ -124,7 +125,7 @@ class ChatAnthropicBedrock(ChatAWSBedrock):
 		Returns:
 			AsyncAnthropicBedrock: An instance of the AsyncAnthropicBedrock client.
 		"""
-		client_params = self._get_client_params()
+		client_params: dict[str, Any] = self._get_client_params()
 		return AsyncAnthropicBedrock(**client_params)
 
 	@property

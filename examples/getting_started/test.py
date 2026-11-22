@@ -23,6 +23,7 @@ load_dotenv()
 
 from browser_use import Agent
 from browser_use.llm.openai.chat import ChatOpenAI
+from pydantic_settings import BaseSettings
 
 
 async def main():

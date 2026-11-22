@@ -48,6 +48,8 @@ async def handle_model_action(page, action) -> ActionResult:
 	Given a computer action (e.g., click, double_click, scroll, etc.),
 	execute the corresponding operation on the Playwright page.
 	"""
+	if action is None:
+		return ActionResult(error='Action is None')
 	action_type = action.type
 	ERROR_MSG: str = 'Could not execute the CUA action.'
 

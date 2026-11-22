@@ -666,7 +666,7 @@ async def test_mcp_nested_object_parameters(test_mcp_server_script):
 		trace_annotation = trace_field.annotation
 
 		# Should be a nested pydantic model, not just dict
-		assert trace_annotation is not dict
+		assert trace_annotation is not dict()
 		assert trace_annotation is not None
 
 		# Verify nested model has the expected fields

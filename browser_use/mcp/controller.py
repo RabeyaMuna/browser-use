@@ -17,7 +17,7 @@ from browser_use.utils import is_new_tab_page
 logger = logging.getLogger(__name__)
 
 try:
-	from mcp import ClientSession, StdioServerParameters
+	from mcp.client import ClientSession, StdioServerParameters
 	from mcp.client.stdio import stdio_client
 	from mcp.types import TextContent, Tool
 
