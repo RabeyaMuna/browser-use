@@ -16,20 +16,23 @@ from pytest_httpserver import HTTPServer
 from browser_use import ActionResult, Agent, BrowserProfile, BrowserSession, Controller
 from browser_use.mcp.client import MCPClient
 
+# Add missing imports
+from typing import Optional, Dict, List
+
 
 class MockMCPServer:
 	"""A minimal MCP server for testing."""
 
 	def __init__(self):
 		self.server = Server('test-mcp-server')
-		self.call_history = []  # Track all tool calls
+		self.call_history: List[Dict[str, Any]] = []  # Track all tool calls
 		self._setup_handlers()
 
 	def _setup_handlers(self):
 		"""Setup MCP server handlers."""
 
 		@self.server.list_tools()
-		async def handle_list_tools() -> list[types.Tool]:
+		async def handle_list_tools() -> List[types.Tool]:
 			"""List available test tools."""
 			return [
 				types.Tool(
@@ -61,7 +64,7 @@ class MockMCPServer:
 			]
 
 		@self.server.call_tool()
-		async def handle_call_tool(name: str, arguments: dict | None) -> list[types.TextContent]:
+		async def handle_call_tool(name: str, arguments: Optional[Dict[str, Any]]) -> List[types.TextContent]:
 			"""Handle tool execution."""
 			# Record the call
 			self.call_history.append({'tool': name, 'arguments': arguments or {}})

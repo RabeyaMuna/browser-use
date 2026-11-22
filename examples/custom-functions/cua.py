@@ -198,6 +198,9 @@ async def openai_cua_fallback(params: OpenAICUAAction, browser_session: BrowserS
 		if not computer_call:
 			raise Exception('No computer calls found in CUA response')
 
+		if computer_call.action is None:
+			raise Exception('No action found in computer call')
+
 		action = computer_call.action
 		print(f'🎬 Executing CUA action: {action.type} - {action}')
 
