@@ -188,13 +188,13 @@ class ChatAnthropic(BaseChatModel):
 					if hasattr(content_block, 'type') and content_block.type == 'tool_use':
 						# Parse the tool input as the structured output
 						try:
-							return ChatInvokeCompletion(completion=output_format.model_validate(content_block.input), usage=usage)
+							return ChatInvokeCompletion(completion=output_format.model_validate_json(content_block.input), usage=usage)
 						except Exception as e:
 							# If validation fails, try to parse it as JSON first
 							if isinstance(content_block.input, str):
 								data = json.loads(content_block.input)
 								return ChatInvokeCompletion(
-									completion=output_format.model_validate(data),
+									completion=output_format.model_validate_json(data),
 									usage=usage,
 								)
 							raise e
