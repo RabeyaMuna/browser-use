@@ -697,8 +697,7 @@ async def evaluate_task_with_comprehensive_judge(
 			'comprehensive_judge': judge_dict,
 			'error': None,
 		}
-
-	except Exception as e:
+	except (Exception, ValueError) as e:
 		logger.error(f'Comprehensive judge evaluation failed for {task_folder.name}: {e}')
 		return {
 			'task_id': task_folder.name,
