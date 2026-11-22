@@ -13,6 +13,7 @@ from mcp.server import NotificationOptions, Server
 from mcp.server.models import InitializationOptions
 from pytest_httpserver import HTTPServer
 
+import sys
 from browser_use import ActionResult, Agent, BrowserProfile, BrowserSession, Controller
 from browser_use.mcp.client import MCPClient
 
@@ -540,8 +541,8 @@ async def test_agent_with_multiple_mcp_servers(test_mcp_server_script, httpserve
 		"""
 		<html>
 		<body>
-			<h1>Multi-MCP Test</h1>
-			<p>Use tools from both servers</p>
+			<h1>Test Page</h1>
+			<p>Count to 5 and echo a message</p>
 		</body>
 		</html>
 		""",

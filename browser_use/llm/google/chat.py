@@ -172,6 +172,9 @@ class ChatGoogle(BaseChatModel):
 			Either a string response or an instance of output_format
 		"""
 
+		# Initialize contents variable
+		contents = None
+
 		# Serialize messages to Google format with the include_system_in_user flag
 		contents, system_instruction = GoogleMessageSerializer.serialize_messages(
 			messages, include_system_in_user=self.include_system_in_user

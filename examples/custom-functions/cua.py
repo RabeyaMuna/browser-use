@@ -15,8 +15,6 @@ from io import BytesIO
 
 from PIL import Image
 
-sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
-
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -32,7 +30,7 @@ from browser_use.llm import ChatOpenAI
 try:
 	from lmnr import Laminar
 
-	Laminar.initialize(project_api_key=os.getenv('LMNR_PROJECT_API_KEY'))
+	Laminar.initialize(project_api_key=os.getenv('LMNR_PROJECT_API_KEY', ''))
 except ImportError:
 	pass
 
@@ -157,7 +155,7 @@ async def openai_cua_fallback(params: OpenAICUAAction, browser_session: BrowserS
 		screenshot_b64 = base64.b64encode(buffer.getvalue()).decode('utf-8')
 		print(f'📸 Rescaled screenshot to viewport size: {page_info.viewport_width}x{page_info.viewport_height}')
 
-		client = AsyncOpenAI(api_key=os.getenv('OPENAI_API_KEY'))
+		client = AsyncOpenAI(api_key=os.getenv('OPENAI_API_KEY', ''))
 		print('🔄 Sending request to OpenAI CUA...')
 
 		prompt = f"""
@@ -276,7 +274,7 @@ if __name__ == '__main__':
 	print()
 
 	# Check if OpenAI API key is available
-	if not os.getenv('OPENAI_API_KEY'):
+	if not os.getenv('OPENAI_API_KEY', ''):
 		print('❌ Error: OPENAI_API_KEY environment variable not set')
 		print('Please set your OpenAI API key to use CUA integration')
 		sys.exit(1)
