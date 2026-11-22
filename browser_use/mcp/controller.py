@@ -9,6 +9,7 @@ import logging
 from typing import Any
 
 from pydantic import Field, create_model
+from pydantic_settings import BaseSettings
 
 from browser_use.agent.views import ActionResult
 from browser_use.controller.registry.service import Registry
