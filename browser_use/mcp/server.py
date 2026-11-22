@@ -705,6 +705,7 @@ class BrowserUseServer:
 		# Use the extract_structured_data action
 		# Create a dynamic action model that matches the controller's expectations
 		from pydantic import create_model
+		from pydantic import BaseModel as ActionModel
 
 		# Create action model dynamically
 		ExtractAction = create_model(

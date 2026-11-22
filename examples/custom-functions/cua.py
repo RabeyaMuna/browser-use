@@ -30,7 +30,7 @@ from browser_use.browser import BrowserSession
 from browser_use.llm import ChatOpenAI
 
 try:
-	from lmnr import Laminar
+	from laminar import Laminar
 
 	Laminar.initialize(project_api_key=os.getenv('LMNR_PROJECT_API_KEY'))
 except ImportError:
@@ -165,7 +165,7 @@ async def openai_cua_fallback(params: OpenAICUAAction, browser_session: BrowserS
         Output one computer_call object that will achieve this goal.
         Goal: {params.description}
         """
-		response = await client.responses.create(
+		response = await client.chat.completions.create(
 			model='computer-use-preview',
 			tools=[
 				{
@@ -175,30 +175,28 @@ async def openai_cua_fallback(params: OpenAICUAAction, browser_session: BrowserS
 					'environment': 'browser',
 				}
 			],
-			input=[
+			messages=[
 				{
 					'role': 'user',
 					'content': [
-						{'type': 'input_text', 'text': prompt},
+						{'type': 'text', 'text': prompt},
 						{
-							'type': 'input_image',
-							'detail': 'auto',
+							'type': 'image_url',
 							'image_url': f'data:image/png;base64,{screenshot_b64}',
 						},
 					],
 				}
 			],
-			truncation='auto',
 			temperature=0.1,
 		)
 
 		print(f'📥 CUA response received: {response}')
-		computer_calls = [item for item in response.output if item.type == 'computer_call']
+		computer_calls = [item for item in response.choices[0].message.tool_calls if item.function.name == 'computer_call']
 		computer_call = computer_calls[0] if computer_calls else None
 		if not computer_call:
 			raise Exception('No computer calls found in CUA response')
 
-		action = computer_call.action
+		action = computer_call.function.arguments
 		print(f'🎬 Executing CUA action: {action.type} - {action}')
 
 		action_result = await handle_model_action(page, action)

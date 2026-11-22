@@ -102,7 +102,7 @@ class MCPToolWrapper:
 		# Parse tool parameters to create Pydantic model
 		param_fields = {}
 
-		if tool.inputSchema:
+		if hasattr(tool, 'inputSchema') and tool.inputSchema:
 			# MCP tools use JSON Schema for parameters
 			properties = tool.inputSchema.get('properties', {})
 			required = set(tool.inputSchema.get('required', []))
