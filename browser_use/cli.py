@@ -1425,7 +1425,7 @@ async def textual_interface(config: dict[str, Any]):
 @click.option('-p', '--prompt', type=str, help='Run a single task without the TUI (headless mode)')
 @click.option('--mcp', is_flag=True, help='Run as MCP server (exposes JSON RPC via stdin/stdout)')
 @click.pass_context
-def main(ctx: click.Context, debug: bool = False, **kwargs):
+def main(ctx: click.Context, debug: bool = False, version: bool = False, mcp: bool = False, prompt: str | None = None, **kwargs: Any):
 	"""Browser-Use Interactive TUI or Command Line Executor
 
 	Use --user-data-dir to specify a local Chrome profile directory.
@@ -1438,14 +1438,14 @@ def main(ctx: click.Context, debug: bool = False, **kwargs):
 	Examples: "Default", "Profile 1", "Profile 2", etc.
 	"""
 
-	if kwargs['version']:
+	if version:
 		from importlib.metadata import version
 
 		print(version('browser-use'))
 		sys.exit(0)
 
 	# Check if MCP server mode is activated
-	if kwargs.get('mcp'):
+	if mcp:
 		# Capture telemetry for MCP server mode via CLI
 		telemetry = ProductTelemetry()
 		telemetry.capture(
@@ -1462,11 +1462,11 @@ def main(ctx: click.Context, debug: bool = False, **kwargs):
 		return
 
 	# Check if prompt mode is activated
-	if kwargs.get('prompt'):
+	if prompt:
 		# Set environment variable for prompt mode before running
 		os.environ['BROWSER_USE_LOGGING_LEVEL'] = 'result'
 		# Run in non-interactive mode
-		asyncio.run(run_prompt_mode(kwargs['prompt'], ctx, debug))
+		asyncio.run(run_prompt_mode(prompt, ctx, debug))
 		return
 
 	# Configure console logging

@@ -16,6 +16,10 @@ from pytest_httpserver import HTTPServer
 from browser_use import Agent, BrowserProfile, BrowserSession, Controller
 from browser_use.mcp.client import MCPClient
 
+# Ensure all dependencies are installed
+import subprocess
+subprocess.run(['pip', 'install', '-r', 'requirements.txt'], check=True)
+
 
 class MockMCPServer:
 	"""A minimal MCP server for testing."""

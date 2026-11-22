@@ -32,13 +32,6 @@ import time
 from pathlib import Path
 from typing import Any, Literal
 
-try:
-	import psutil
-
-	PSUTIL_AVAILABLE = True
-except ImportError:
-	PSUTIL_AVAILABLE = False
-
 # Set environment to suppress browser-use logging during import
 os.environ['BROWSER_USE_LOGGING_LEVEL'] = 'error'
 os.environ['BROWSER_USE_SETUP_LOGGING'] = 'false'  # Prevent automatic logging setup

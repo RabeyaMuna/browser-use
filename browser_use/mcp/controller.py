@@ -17,9 +17,9 @@ from browser_use.utils import is_new_tab_page
 logger = logging.getLogger(__name__)
 
 try:
-	from mcp import ClientSession, StdioServerParameters
-	from mcp.client.stdio import stdio_client
-	from mcp.types import TextContent, Tool
+	from mcp.client import ClientSession, StdioServerParameters
+	from mcp.client.stdio_client import stdio_client
+	from mcp.common.types import TextContent, Tool
 
 	MCP_AVAILABLE = True
 except ImportError:
@@ -172,7 +172,7 @@ class MCPToolWrapper:
 						content_parts = []
 						for item in result.content:
 							if isinstance(item, TextContent):
-								content_parts.append(item.text)  # type: ignore[reportAttributeAccessIssue]
+								content_parts.append(item.text)
 							else:
 								content_parts.append(str(item))
 						extracted_content = '\n'.join(content_parts)
