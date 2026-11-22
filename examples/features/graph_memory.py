@@ -5,10 +5,10 @@ You must have a running Neo4j instance and the necessary environment variables s
 
 import asyncio
 import os
-from dotenv import load_dotenv
 
 from browser_use import Agent
 from browser_use.agent.memory import MemoryConfig
+from dotenv import load_dotenv
 from langchain_openai import ChatOpenAI
 
 load_dotenv()
