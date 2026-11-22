@@ -2,8 +2,8 @@ import asyncio
 import hashlib
 import logging
 import os
-from typing import Any
 
+from typing import Any
 from browser_use import Agent, BrowserProfile, BrowserSession, Controller
 from browser_use.llm import ChatGoogle
 
