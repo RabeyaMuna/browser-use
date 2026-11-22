@@ -47,14 +47,14 @@ class Registry(Generic[Context]):
 		# e.g. playwright page, 2fa code getters, sensitive_data wrappers, other context, etc.
 		return {
 			'context': None,  # Context is a TypeVar, so we can't validate type
-			'browser_session': BrowserSession,
-			'browser': BrowserSession,  # legacy name
-			'browser_context': BrowserSession,  # legacy name
-			'page': Page,
-			'page_extraction_llm': BaseChatModel,
+			'browser_session': type(BrowserSession),
+			'browser': type(BrowserSession),  # legacy name
+			'browser_context': type(BrowserSession),  # legacy name
+			'page': type(Page),
+			'page_extraction_llm': type(BaseChatModel),
 			'available_file_paths': list,
 			'has_sensitive_data': bool,
-			'file_system': FileSystem,
+			'file_system': type(FileSystem),
 		}
 
 	def _normalize_action_function_signature(
