@@ -8,11 +8,23 @@
 
 name: publish
 
+# Cancel in-progress runs when a new commit is pushed to the same branch/PR
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 on:
   release:
     types: [published]     # publish full release to PyPI when a release is created on Github
-  schedule:
-    - cron: "0 17 * * FRI" # tag a pre-release on Github every Friday at 5 PM UTC
+  # schedule:
+  #   - cron: "0 17 * * FRI" # tag a pre-release on Github every Friday at 5 PM UTC
+  workflow_dispatch:
+    inputs:
+      create_tag:
+        description: "Create the next pre-release tag before publishing"
+        required: false
+        default: true
+        type: boolean
 
 permissions:
   contents: write
@@ -20,47 +32,114 @@ permissions:
 
 jobs:
   tag_pre_release:
-    if: github.event_name == 'schedule'
+    if: github.event_name == 'workflow_dispatch' && inputs.create_tag
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - name: Create pre-release tag
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - name: Tag the pyproject version
         run: |
+          set -euo pipefail
           git fetch --tags
-          latest_tag=$(git tag --list --sort=-v:refname | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+rc[0-9]+$' | head -n 1)
-          if [ -z "$latest_tag" ]; then
-            new_tag="v0.1.0rc1"
-          else
-            new_tag=$(echo $latest_tag | awk -F'rc' '{print $1 "rc" $2+1}')
+          version=$(python3 -c "import tomllib; print(tomllib.load(open('pyproject.toml', 'rb'))['project']['version'])")
+          # The tag is what pyproject.toml says gets published; never a bump of the newest (0.x) tag.
+          if ! [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+rc[0-9]+$ ]]; then
+            echo "pyproject.toml version $version is not a pre-release (X.Y.ZrcN); bump it first" > /dev/stderr
+            exit 1
           fi
-          git tag $new_tag
-          git push origin $new_tag
+          if git rev-parse -q --verify "refs/tags/$version" > /dev/null; then
+            echo "Tag $version already exists; bump the pyproject.toml version first" > /dev/stderr
+            exit 1
+          fi
+          echo "new_tag: $version"
+          git tag "$version"
+          git push origin "$version"
 
   publish_to_pypi:
-    if: github.event_name == 'release'
+    needs: tag_pre_release
+    # A failed tag step stops the publish; a skipped one (release event, create_tag=false) does not. Either way the
+    # tag check below requires the pyproject version's tag on the checked-out commit.
+    if: always() && needs.tag_pre_release.result != 'failure' && needs.tag_pre_release.result != 'cancelled' && (github.event_name == 'release' || github.event_name == 'workflow_dispatch')
     runs-on: ubuntu-latest
+    environment: release
+    permissions:
+      contents: write    # for the stable-branch push at the end
+      id-token: write    # for PyPI trusted-publishing OIDC
+      actions: read      # for the env protection verification step
+    env:
+      IN_DOCKER: 'True'
+      ANONYMIZED_TELEMETRY: 'false'
     steps:
-      - uses: actions/checkout@v4
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - name: Verify release environment is protected (fail-closed)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          ENV_NAME="release"
+          if ! RESP="$(gh api -H 'Accept: application/vnd.github+json' \
+              "/repos/${GITHUB_REPOSITORY}/environments/${ENV_NAME}" 2>/dev/null)"; then
+            echo "::error::Environment '${ENV_NAME}' does not exist (or is inaccessible). Create it at https://github.com/${GITHUB_REPOSITORY}/settings/environments/new with required reviewers and prevent_self_review enabled, then re-run."
+            exit 1
+          fi
+          HAS_REVIEWERS="$(echo "$RESP" | jq -r '[.protection_rules[]? | select(.type == "required_reviewers")] | length')"
+          if [ "${HAS_REVIEWERS:-0}" -lt 1 ]; then
+            echo "::error::Environment '${ENV_NAME}' exists but has no required-reviewers protection rule."
+            exit 1
+          fi
+          SELF_REVIEW_BLOCKED="$(echo "$RESP" | jq -r '[.protection_rules[]? | select(.type=="required_reviewers") | .prevent_self_review] | any')"
+          if [ "$SELF_REVIEW_BLOCKED" != "true" ]; then
+            echo "::error::Environment '${ENV_NAME}' must have prevent_self_review enabled. Without it, the gate collapses to one identity when the dispatcher is also a reviewer."
+            exit 1
+          fi
+          echo "::notice::Environment '${ENV_NAME}' is protected with prevent_self_review. OK."
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: astral-sh/setup-uv@d0cc045d04ccac9d8b7881df0226f9e82c39688e # v6
         with:
-          python-version: "3.x"
-      - uses: astral-sh/setup-uv@v5
-      - run: uv run ruff check --no-fix --select PLE # check only for syntax errors
+          version: "0.12.9"
+          enable-cache: true
+          activate-environment: true
+      # Release and dispatch alike: never publish a version whose tag is missing or on another commit.
+      - name: Tag equal to the pyproject version is this commit
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+        run: |
+          set -euo pipefail
+          version=$(python3 -c "import tomllib; print(tomllib.load(open('pyproject.toml', 'rb'))['project']['version'])")
+          if [ "$EVENT_NAME" = release ] && [ "$RELEASE_TAG" != "$version" ]; then
+            echo "::error::Release tag $RELEASE_TAG does not match pyproject.toml version $version"
+            exit 1
+          fi
+          if ! git fetch --no-tags --depth=1 origin "+refs/tags/$version:refs/tags/$version"; then
+            echo "::error::Tag $version does not exist; tag this commit (or dispatch with create_tag) first"
+            exit 1
+          fi
+          head=$(git rev-parse HEAD)
+          if [ "$(git rev-parse "refs/tags/$version^{commit}")" != "$head" ]; then
+            echo "::error::Tag $version is not the checked-out commit $head"
+            exit 1
+          fi
+      - run: uv sync --locked --dev --all-extras
+
+      - run: uv run --no-sync ruff check --no-fix --select PLE # quick check for syntax errors to avoid waiting time doing the rest of the build
+      # The dispatched SHA is what reaches PyPI: its tests must pass here (test.yaml's matrix runs the chrome ones)
+      - run: uv run --no-sync pytest tests/ci -m "not chrome" -q
       - run: uv build
-      - run: uv run --isolated --no-project --with pytest --with dist/*.whl tests/conftest.py
-      - run: uv run --isolated --no-project --with pytest --with dist/*.tar.gz tests/conftest.py
-      - run: uv run --with=dotenv pytest \
-          --ignore=tests/test_dropdown_error.py \
-          --ignore=tests/test_gif_path.py \
-          --ignore=tests/test_models.py \
-          --ignore=tests/test_react_dropdown.py \
-          --ignore=tests/test_save_conversation.py \
-          --ignore=tests/test_vision.py \
-          --ignore=tests/test_wait_for_element.py || true
-      - run: uv publish --trusted-publishing always
+      - name: Smoke test the wheel in a fresh venv
+        run: |
+          set -euo pipefail
+          uv venv --python 3.11 /tmp/wheel-smoke
+          uv pip install --python /tmp/wheel-smoke/bin/python dist/*.whl
+          /tmp/wheel-smoke/bin/browser-use --version
+          # Outside the checkout: `python -c` puts the cwd first on sys.path, which would import the source tree, not the wheel
+          cd "$RUNNER_TEMP"
+          /tmp/wheel-smoke/bin/python -c "import os, browser_use; from browser_use import Agent, Browser, ChatBrowserUse, Tools; assert not browser_use.__file__.startswith(os.environ['GITHUB_WORKSPACE']), browser_use.__file__"
+
+      # Trusted publishing (OIDC, environment release) with PEP 740 attestations for dist/*
+      - uses: pypa/gh-action-pypi-publish@7245906fb61fa33a13554f9d5fb856fe61758086 # v1.14.3
+        with:
+          attestations: true
       - name: Push to stable branch (if stable release)
-        if: startsWith(github.ref_name, 'v') && !contains(github.ref_name, 'rc')
+        if: github.event_name == 'release' && !contains(github.ref_name, 'rc')
         run: |
           git checkout -b stable
-          git push origin stable
+          git push origin -f stable
